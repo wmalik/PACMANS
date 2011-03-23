@@ -142,7 +142,7 @@
             this.connectMenuItem,
             this.readCalMenuItem});
             this.rightClickStrip.Name = "rightClickStrip";
-            this.rightClickStrip.Size = new System.Drawing.Size(153, 92);
+            this.rightClickStrip.Size = new System.Drawing.Size(151, 70);
             this.rightClickStrip.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
             // 
             // disconnectMenuItem
@@ -157,7 +157,7 @@
             this.connectMenuItem.Name = "connectMenuItem";
             this.connectMenuItem.Size = new System.Drawing.Size(152, 22);
             this.connectMenuItem.Text = "Connect";
-            this.connectMenuItem.Click += new System.EventHandler(this.reallyToolStripMenuItem_Click);
+            this.connectMenuItem.Click += new System.EventHandler(this.connectMenuItem_Click);
             // 
             // readCalMenuItem
             // 
@@ -224,6 +224,7 @@
             // 
             // textBox3
             // 
+            this.textBox3.AcceptsTab = true;
             this.textBox3.Location = new System.Drawing.Point(68, 71);
             this.textBox3.Name = "textBox3";
             this.textBox3.Size = new System.Drawing.Size(100, 20);
@@ -231,6 +232,7 @@
             // 
             // textBox2
             // 
+            this.textBox2.AcceptsTab = true;
             this.textBox2.Location = new System.Drawing.Point(68, 45);
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(100, 20);
@@ -284,6 +286,7 @@
             this.consoleBox.Location = new System.Drawing.Point(3, 3);
             this.consoleBox.Multiline = true;
             this.consoleBox.Name = "consoleBox";
+            this.consoleBox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
             this.consoleBox.Size = new System.Drawing.Size(310, 101);
             this.consoleBox.TabIndex = 0;
             // 

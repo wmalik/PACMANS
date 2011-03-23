@@ -5,12 +5,12 @@ using System.Text;
 
 namespace PuppetMaster
 {
-    class ClientMetadata
+    public class ClientMetadata
     {
-        private string username;
-        private string ip_addr;
-        private int port;
-        private string service;
+        //private string username;
+        //private string ip_addr;
+        //private int port;
+        //private string service;
 
         public string Username
         {

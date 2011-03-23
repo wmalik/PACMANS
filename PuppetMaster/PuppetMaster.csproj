@@ -47,6 +47,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClientMetadata.cs" />
+    <Compile Include="ServerMetadata.cs" />
     <Compile Include="PuppetGUI.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -80,7 +82,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="puppetmaster.xml">
+    <Content Include="config\puppetmaster.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </Content>

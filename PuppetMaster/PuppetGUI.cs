@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using System.Xml;
 
 
+
 //added by me
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels.Tcp;
@@ -30,18 +31,17 @@ namespace PuppetMaster
         private void readConfigurationFile()
         {
             string current_dir = System.IO.Directory.GetCurrentDirectory();
-            string filename = "puppetmaster.xml";
+            string filename = "config/puppetmaster.xml";
             XmlDocument xmlDoc = new XmlDocument(); //* create an xml document object.
             xmlDoc.Load(filename); //* load the XML document from the specified file.
             
             XmlNodeList portnodelist = xmlDoc.GetElementsByTagName("port");
             XmlNodeList servicenodelist = xmlDoc.GetElementsByTagName("service");
             
-          portnum = portnodelist[0].InnerText;
-          service = servicenodelist[0].InnerText;
+          portnum = portnodelist[0].InnerText; //portnum where PuppetMaster listens for incoming requests
+          service = servicenodelist[0].InnerText; //name of the Remoting service
 
-          //show("Started listening on port " + portnum);
-          //show("Service name: "+service);
+          
         }
 
         private void show(string msg)
@@ -78,6 +78,39 @@ namespace PuppetMaster
             string service_string = "tcp://" + getIPAddress() + ":" + port + "/" + service;
             show("Started "+service_string);
             
+        }
+
+        //developed for testing addition of nodes to treeviews
+        public void updateClientsTree()
+        {
+ 
+        TreeNode newNode = new TreeNode("NewClient");
+        //treeView1.SelectedNode.Nodes.Add(newNode);
+        int index = treeView1.Nodes.IndexOfKey("Clients");
+        treeView1.Nodes[index].Nodes.Insert(0, "Client Wongo");
+      
+        }
+
+        //used for adding clients in the treeview
+        public void updateClientsTree(ClientMetadata cm)
+        {
+
+            TreeNode newNode = new TreeNode(cm.Username);
+            //treeView1.SelectedNode.Nodes.Add(newNode);
+            int index = treeView1.Nodes.IndexOfKey("Clients");
+            treeView1.Nodes[index].Nodes.Insert(0, newNode);
+
+        }
+
+        //used for adding servers in the treeview
+        public void updateServersTree(ServerMetadata sm)
+        {
+
+            TreeNode newNode = new TreeNode(sm.Username);
+            //treeView1.SelectedNode.Nodes.Add(newNode);
+            int index = treeView1.Nodes.IndexOfKey("Servers");
+            treeView1.Nodes[index].Nodes.Insert(0, newNode);
+
         }
 
         
@@ -136,6 +169,7 @@ namespace PuppetMaster
             //TODO: get ip_addr, port, service of the selected username from hashtable or dict
             //TODO: connect to the service (if not already connected)
             //TODO: call the disconnectClient(args) method of the remote object 
+            updateClientsTree();
         }
 
         private void readCalMenuItem_Click(object sender, EventArgs e)
@@ -144,6 +178,14 @@ namespace PuppetMaster
             //TODO: get ip_addr, port, service of the selected username from hashtable or dict
             //TODO: connect to the service (if not already connected)
             //TODO: get the Calendar state by calling readCalendar(args) method of the remote object
+        }
+
+        private void connectMenuItem_Click(object sender, EventArgs e)
+        {
+            //TODO: fetch selected username
+            //TODO: get ip_addr, port, service of the selected username from hashtable or dict
+            //TODO: connect to the service (if not already connected)
+            //TODO: call the connectClient(args) method of the remote object 
         }
     }
 }
