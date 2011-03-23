@@ -286,7 +286,6 @@
             this.consoleBox.Name = "consoleBox";
             this.consoleBox.Size = new System.Drawing.Size(310, 101);
             this.consoleBox.TabIndex = 0;
-            this.consoleBox.Text = "Welcome to PACMANS!";
             // 
             // PuppetGUI
             // 

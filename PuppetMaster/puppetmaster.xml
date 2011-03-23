@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <config>
-<port>112233</port>
+<port>34243</port>
 <service>PuppetMasterService</service>
 </config>

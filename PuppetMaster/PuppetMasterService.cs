@@ -7,15 +7,27 @@ namespace PuppetMaster
 {
     class PuppetMasterService : MarshalByRefObject
     {
-        public void registerClient(string username, string ip_addr)
+        public void registerClient(string username, string ip_addr, int port, string service)
         {
-            //TODO: add to clients_list
+            ClientMetadata cm = new ClientMetadata();
+            cm.Username = username;
+            cm.IP_Addr = ip_addr;
+            cm.Port = port;
+            cm.Service = service;
+            //TODO: add the cm object to clients_list
+
             //TODO: update the Clients tree in PuppetGUI
         }
 
-        public void registerServer(string username, string ip_addr)
+        public void registerServer(string username, string ip_addr, int port, string service)
         {
-            //TODO: add to servers_list
+            ServerMetadata sm = new ServerMetadata();
+            sm.Username = username;
+            sm.IP_Addr = ip_addr;
+            sm.Port = port;
+            sm.Service = service;
+            //TODO: add the sm object to servers_list
+
             //TODO: update the Servers tree in PuppetGUI
         }
     }

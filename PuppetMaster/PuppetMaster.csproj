@@ -55,6 +55,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PuppetMasterService.cs" />
     <EmbeddedResource Include="PuppetGUI.resx">
       <DependentUpon>PuppetGUI.cs</DependentUpon>
     </EmbeddedResource>
@@ -81,6 +82,7 @@
   <ItemGroup>
     <Content Include="puppetmaster.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

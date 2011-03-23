@@ -14,6 +14,7 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
 using System.Net.Sockets;
+using System.Net;
 
 namespace PuppetMaster
 {
@@ -34,13 +35,13 @@ namespace PuppetMaster
             xmlDoc.Load(filename); //* load the XML document from the specified file.
             
             XmlNodeList portnodelist = xmlDoc.GetElementsByTagName("port");
-            service = xmlDoc.GetElementById("service").InnerText;
+            XmlNodeList servicenodelist = xmlDoc.GetElementsByTagName("service");
+            
           portnum = portnodelist[0].InnerText;
-            //* Display the results.
-          //  Console.WriteLine("port: " + portnum);
-         //   MessageBox.Show(portnum);
-          show("Started listening on port " + portnum);
-          show("Service name: "+service);
+          service = servicenodelist[0].InnerText;
+
+          //show("Started listening on port " + portnum);
+          //show("Service name: "+service);
         }
 
         private void show(string msg)
@@ -48,16 +49,35 @@ namespace PuppetMaster
             this.consoleBox.AppendText("\r\n"+"(*) "+msg);
         }
 
+        private string getIPAddress()
+        {
+            IPHostEntry host;
+            string localIP = "?";
+            host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (IPAddress ip in host.AddressList)
+            {
+                if (ip.AddressFamily.ToString() == "InterNetwork")
+                {
+                    localIP = ip.ToString();
+                }
+            }
+            return localIP;
+        }
+
         private void startPuppetMasterService()
         {
-            TcpChannel channel = new TcpChannel(Convert.ToInt16(portnum));
+            int port = Convert.ToInt32(portnum);
+            TcpChannel channel = new TcpChannel(port);
             ChannelServices.RegisterChannel(channel, true);
 
             RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(MyRemoteObject),
-                "MyRemoteObjectName",
+                typeof(PuppetMasterService),
+                "PuppetMasterService",
                 WellKnownObjectMode.Singleton);
-      
+
+            string service_string = "tcp://" + getIPAddress() + ":" + port + "/" + service;
+            show("Started "+service_string);
+            
         }
 
         
