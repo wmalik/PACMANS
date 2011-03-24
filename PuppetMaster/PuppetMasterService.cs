@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Collections;
+using System.Windows.Forms;
 
 namespace PuppetMaster
 {
@@ -10,7 +11,32 @@ namespace PuppetMaster
     {
         Hashtable clients_list = new Hashtable();
         Hashtable servers_list = new Hashtable();
-        public void registerClient(string username, string ip_addr, int port, string service)
+        public PuppetMasterService()
+        {
+        }
+
+        public PuppetMasterService(PuppetGUI gui)
+        {
+            this.Gui= gui;
+        }
+
+        public PuppetGUI Gui
+        {
+            get;
+            set;
+        }
+
+        public Hashtable getClientsList()
+        {
+            return this.clients_list;
+        }
+
+        public Hashtable getServersList()
+        {
+            return this.servers_list;
+        }
+
+        public bool registerClient(string username, string ip_addr, int port, string service)
         {
             
             //creating a ClientMetadata object to store client information
@@ -24,10 +50,14 @@ namespace PuppetMaster
             clients_list.Add(username, cm);
             
             //TODO: update the Clients tree in PuppetGUI
-            //puppetgui.updateClientsTree(cm);
+            Gui.updateClientsTree(cm, null);
+
+           // MessageBox.Show(username+" has joined!");
+
+            return true;
         }
 
-        public void registerServer(string username, string ip_addr, int port, string service)
+        public bool registerServer(string username, string ip_addr, int port, string service)
         {
             ServerMetadata sm = new ServerMetadata();
             sm.Username = username;
@@ -39,7 +69,9 @@ namespace PuppetMaster
             servers_list.Add(username, sm);
 
             //TODO: update the Servers tree in PuppetGUI
-            //puppetgui.updateServersTree(sm);
+            Gui.updateServersTree(sm, null);
+
+            return true;
         }
     }
 }

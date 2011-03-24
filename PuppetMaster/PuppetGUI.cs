@@ -16,6 +16,7 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
 using System.Net.Sockets;
 using System.Net;
+using System.Collections;
 
 namespace PuppetMaster
 {
@@ -23,6 +24,8 @@ namespace PuppetMaster
     {
         string portnum = "";
         string service = "";
+        PuppetMasterService pms;
+
         public PuppetGUI()
         {
             InitializeComponent();
@@ -70,17 +73,25 @@ namespace PuppetMaster
             TcpChannel channel = new TcpChannel(port);
             ChannelServices.RegisterChannel(channel, true);
 
+            
+            pms = new PuppetMasterService();
+            pms.Gui = this;
+            RemotingServices.Marshal(pms,service, typeof(PuppetMasterService));
+            
+            
+           /*
             RemotingConfiguration.RegisterWellKnownServiceType(
                 typeof(PuppetMasterService),
-                "PuppetMasterService",
+                service,
                 WellKnownObjectMode.Singleton);
+            */
 
             string service_string = "tcp://" + getIPAddress() + ":" + port + "/" + service;
             show("Started "+service_string);
             
         }
 
-        //developed for testing addition of nodes to treeviews
+        //developed for debugging
         public void updateClientsTree()
         {
  
@@ -92,24 +103,38 @@ namespace PuppetMaster
         }
 
         //used for adding clients in the treeview
-        public void updateClientsTree(ClientMetadata cm)
+        public void updateClientsTree(object sender, EventArgs ea)
         {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<object, EventArgs>(updateClientsTree), sender, ea);
+                return;
+            }
 
+            ClientMetadata cm = (ClientMetadata)sender;
             TreeNode newNode = new TreeNode(cm.Username);
-            //treeView1.SelectedNode.Nodes.Add(newNode);
             int index = treeView1.Nodes.IndexOfKey("Clients");
             treeView1.Nodes[index].Nodes.Insert(0, newNode);
+            show(cm.Username + " just came online");
 
         }
 
-        //used for adding servers in the treeview
-        public void updateServersTree(ServerMetadata sm)
-        {
+      
 
+        //used for adding servers in the treeview
+        public void updateServersTree(object sender, EventArgs ea)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<object, EventArgs>(updateServersTree), sender, ea);
+                return;
+            }
+            ServerMetadata sm = (ServerMetadata)sender;
             TreeNode newNode = new TreeNode(sm.Username);
             //treeView1.SelectedNode.Nodes.Add(newNode);
             int index = treeView1.Nodes.IndexOfKey("Servers");
             treeView1.Nodes[index].Nodes.Insert(0, newNode);
+            show(sm.Username + " just came online");
 
         }
 
@@ -165,11 +190,43 @@ namespace PuppetMaster
 
         private void disconnectMenuItem_Click(object sender, EventArgs e)
         {
-            //TODO: fetch selected username
-            //TODO: get ip_addr, port, service of the selected username from hashtable or dict
+
+            //fetch selected username
+            string username = treeView1.SelectedNode.Text;
+            string parent = treeView1.SelectedNode.Parent.Text;
+            string ip_addr;
+            int port;
+            string service;
+
+            //get ip_addr, port, service of the selected server (or client) from hashtable or dict
+            if (parent.Equals("Servers"))
+            {
+                ServerMetadata sm = (ServerMetadata)pms.getServersList()[username];
+                ip_addr = sm.IP_Addr;
+                port = sm.Port;
+                service = sm.Service;
+            }
+
+            else if (parent.Equals("Clients"))
+            {
+                ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
+                ip_addr = cm.IP_Addr;
+                port = cm.Port;
+                service = cm.Service;
+            }
+            else
+            {
+                return;
+            }
             //TODO: connect to the service (if not already connected)
+            show("TODO: connect to the service (if not already connected)");
             //TODO: call the disconnectClient(args) method of the remote object 
-            updateClientsTree();
+            show("TODO: call the disconnectClient(args) method of the remote object");
+            show("IP:"+ip_addr+" port:"+port+" service:"+service);
+            //TODO:
+            show("TODO: remove the server from tree");
+            treeView1.SelectedNode.Remove();
+
         }
 
         private void readCalMenuItem_Click(object sender, EventArgs e)
