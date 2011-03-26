@@ -38,6 +38,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Beans.cs" />
+    <Compile Include="Slots.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="Exceptions.cs" />
   </ItemGroup>
   <ItemGroup>

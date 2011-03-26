@@ -198,7 +198,6 @@ namespace PuppetMaster
             string parent = treeView1.SelectedNode.Parent.Text;
             string ip_addr;
             int port;
-            string service;
 
             //get ip_addr, port, service of the selected server (or client) from hashtable or dict
             if (parent.Equals("Servers"))
@@ -206,7 +205,6 @@ namespace PuppetMaster
                 ServerMetadata sm = (ServerMetadata)pms.getServersList()[username];
                 ip_addr = sm.IP_Addr;
                 port = sm.Port;
-                service = sm.Service;
             }
 
             else if (parent.Equals("Clients"))
@@ -214,7 +212,6 @@ namespace PuppetMaster
                 ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
                 ip_addr = cm.IP_Addr;
                 port = cm.Port;
-                service = cm.Service;
             }
             else
             {
@@ -224,7 +221,7 @@ namespace PuppetMaster
             show("TODO: connect to the service (if not already connected)");
             //TODO: call the disconnectClient(args) method of the remote object 
             show("TODO: call the disconnectClient(args) method of the remote object");
-            show("IP:"+ip_addr+" port:"+port+" service:"+service);
+            show("IP:"+ip_addr+" port:"+port+" service:"); //TODO: ADD CONSTANT OF SERVICE NAME
             //TODO:
             show("TODO: remove the server from tree");
             treeView1.SelectedNode.Remove();

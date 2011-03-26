@@ -37,7 +37,7 @@ namespace PuppetMaster
             return this.servers_list;
         }
 
-        public bool registerClient(string username, string ip_addr, int port, string service)
+        public bool registerClient(string username, string ip_addr, int port)
         {
             
             //creating a ClientMetadata object to store client information
@@ -45,7 +45,6 @@ namespace PuppetMaster
             cm.Username = username;
             cm.IP_Addr = ip_addr;
             cm.Port = port;
-            cm.Service = service;
             
             //adding the client metadata to the global hashtable so that it can be used later on
             clients_list.Add(username, cm);
@@ -58,13 +57,12 @@ namespace PuppetMaster
             return true;
         }
 
-        public bool registerServer(string username, string ip_addr, int port, string service)
+        public bool registerServer(string username, string ip_addr, int port)
         {
             ServerMetadata sm = new ServerMetadata();
             sm.Username = username;
             sm.IP_Addr = ip_addr;
             sm.Port = port;
-            sm.Service = service;
 
             //adding the client metadata to the global hashtable so that it can be used later on
             servers_list.Add(username, sm);

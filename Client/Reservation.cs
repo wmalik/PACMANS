@@ -3,11 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Common.Beans
+namespace Client
 {
-
-    public class ReservationRequest
+    class Reservation
     {
+
+        public int ReservationID
+        {
+            get;
+            set;
+        }
+
+        public string InitiatorID
+        {
+            get;
+            set;
+        }
 
         public string Description
         {
@@ -15,37 +26,37 @@ namespace Common.Beans
             set;
         }
 
-        public string[] Users
+        public Dictionary<int, ReservationSlot> Slots
         {
             get;
             set;
         }
 
-        public int[] Slots
+        public List<string> Users
         {
             get;
             set;
         }
+
 
     }
 
-
-    public class ClientMetadata
+    public class ReservationSlot
     {
 
-        public string Username
+        public int ReservationID
         {
             get;
             set;
         }
 
-        public string IP_Addr
+        public int SlotID
         {
             get;
             set;
         }
 
-        public int Port
+        public ReservationSlotState State
         {
             get;
             set;
@@ -53,27 +64,8 @@ namespace Common.Beans
 
     }
 
-    public class ServerMetadata
+    public enum ReservationSlotState
     {
-
-        public string Username
-        {
-            get;
-            set;
-        }
-
-        public string IP_Addr
-        {
-            get;
-            set;
-        }
-
-        public int Port
-        {
-            get;
-            set;
-        }
-
+        INITIATED, TENTATIVELY_BOOKED, PRE_COMMITTED, COMMITTED, ABORTED
     }
-
 }
