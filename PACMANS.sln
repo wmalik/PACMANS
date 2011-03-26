@@ -2,10 +2,18 @@
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual C# Express 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuppetMaster", "PuppetMaster\PuppetMaster.csproj", "{632C9386-A3A8-4E8D-A090-F5FA6F2E1912}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B83F50E5-B30D-48EA-BA4C-2637CC91153E} = {B83F50E5-B30D-48EA-BA4C-2637CC91153E}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{D6AAE5DE-4C6D-4078-ACF3-3E10D91035F2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{01381B62-B524-44C4-B37C-2578B53D575C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B83F50E5-B30D-48EA-BA4C-2637CC91153E} = {B83F50E5-B30D-48EA-BA4C-2637CC91153E}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{B83F50E5-B30D-48EA-BA4C-2637CC91153E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,6 +33,10 @@ Global
 		{01381B62-B524-44C4-B37C-2578B53D575C}.Debug|x86.Build.0 = Debug|x86
 		{01381B62-B524-44C4-B37C-2578B53D575C}.Release|x86.ActiveCfg = Release|x86
 		{01381B62-B524-44C4-B37C-2578B53D575C}.Release|x86.Build.0 = Release|x86
+		{B83F50E5-B30D-48EA-BA4C-2637CC91153E}.Debug|x86.ActiveCfg = Debug|x86
+		{B83F50E5-B30D-48EA-BA4C-2637CC91153E}.Debug|x86.Build.0 = Debug|x86
+		{B83F50E5-B30D-48EA-BA4C-2637CC91153E}.Release|x86.ActiveCfg = Release|x86
+		{B83F50E5-B30D-48EA-BA4C-2637CC91153E}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

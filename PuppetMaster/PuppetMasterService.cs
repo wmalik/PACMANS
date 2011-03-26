@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Collections;
 using System.Windows.Forms;
+using Common.Beans;
 
 namespace PuppetMaster
 {

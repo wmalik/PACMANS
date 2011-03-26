@@ -18,6 +18,8 @@ using System.Net.Sockets;
 using System.Net;
 using System.Collections;
 
+using Common.Beans;
+
 namespace PuppetMaster
 {
     public partial class PuppetGUI : Form
