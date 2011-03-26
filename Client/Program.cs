@@ -9,6 +9,7 @@ namespace Client
     {
         static void Main(string[] args)
         {
+            Client client = new Client("Client.xml");
         }
     }
 }

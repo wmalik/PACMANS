@@ -10,7 +10,7 @@ namespace Server.Services
 
     /* SERVICES EXPOSED TO THE CLIENTS */
 
-    interface LookupService
+    interface ILookupService
     {
 
         void RegisterUser(string username, int port);
@@ -21,7 +21,7 @@ namespace Server.Services
 
     }
 
-    interface SequenceNumberService
+    interface ISequenceNumberService
     {
 
         int nextSequenceNumber();
@@ -30,7 +30,7 @@ namespace Server.Services
 
     /* SERVICES EXPOSED TO THE SERVERS */
 
-    interface ConsistencyService
+    interface IConsistencyService
     {
 
         bool WriteClientMetadata(ClientMetadata clientInfo);

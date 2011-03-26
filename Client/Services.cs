@@ -11,7 +11,7 @@ namespace Client.Services
 
     /* SERVICES EXPOSED TO THE PUPPER MASTER */
 
-    interface FacadeService
+    interface IFacadeService
     {
         bool Connect();
 
@@ -25,7 +25,7 @@ namespace Client.Services
     /* SERVICES EXPOSED TO THE CLIENTS */
 
 
-    interface BookingService
+    interface IBookingService
     {
 
         List<ReservationSlot> InitReservation(Reservation res);
