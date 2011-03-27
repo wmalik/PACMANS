@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <config>
-<Username>Dumbest_Client</Username>
-<Port>55555</Port>
-  <PuppetMasterIP>127.0.0.1</PuppetMasterIP>
+<Username>Client5</Username>
+<Port>40005</Port>
+  <PuppetMasterIP>192.168.1.84</PuppetMasterIP>
   <PuppetMasterPort>34243</PuppetMasterPort>
   <Server>
     <ip>127.0.0.1</ip>

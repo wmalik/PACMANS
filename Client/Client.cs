@@ -9,17 +9,18 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
 using System.Net.Sockets;
 using Common.Slots;
+using PuppetMaster;
+using System.Collections;
 
 
 namespace Client
 {
-    interface IClient
+    public interface IClient
     {
-           
-        //public void init();
+        void init();
     }
 
-    class Client : IClient
+    public class Client : IClient
     {
         private Dictionary<int, CalendarSlot> calendar;
         private string Username;
@@ -27,10 +28,18 @@ namespace Client
         private string PuppetIP;
         private int PuppetPort;
         private List<ServerMetadata> servers;
+        private string filename;
+        private FacadeService fc;
 
         public Client(string filename)
         {
-            readConfigurationFile(filename);
+            this.filename = filename;
+        }
+
+        public void init()
+        {
+            readConfigurationFile(this.filename);
+            startFacadeService();
             connectToPuppetMaster();
         }
 
@@ -66,28 +75,69 @@ namespace Client
             }
         }
 
-        void connectToPuppetMaster()
+        
+
+        private void startFacadeService()
         {
-            //connect to PuppetMaster here
-            String connectionString = "tcp://" + PuppetIP + ":" + PuppetPort + Common.Constants.PUPPET_MASTER_SERVICE_NAME;
-            TcpChannel channel = new TcpChannel();
+
+            IDictionary RemoteChannelProperties = new Dictionary<string, string>();
+            RemoteChannelProperties["port"] = Port.ToString();
+            RemoteChannelProperties["name"] = Username+" FacadeService";
+            TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
+            //TcpChannel channel = new TcpChannel(Port);
+            string user = Username;
             ChannelServices.RegisterChannel(channel, true);
 
-            /*TODO: uncomment and fix this to make it work
+            fc = new FacadeService();
+            string service_name = Username + "/" + Common.Constants.FACADE_SERVICE_NAME;
+            RemotingServices.Marshal(fc, service_name, typeof(FacadeService));
+
+
+            /*
+             RemotingConfiguration.RegisterWellKnownServiceType(
+                 typeof(PuppetMasterService),
+                 service,
+                 WellKnownObjectMode.Singleton);
+             */
+
+            string service_string = "tcp://" + Helper.getIPAddress() + ":" + Port + "/" + service_name;
+            show("Started " + service_string);
+
+        }
+
+        private void show(string msg)
+        {
+            Console.WriteLine("["+ Username +"] "+msg);
+        }
+
+        private void connectToPuppetMaster()
+        {
+            //connect to PuppetMaster here
+            String connectionString = "tcp://" + PuppetIP + ":" + PuppetPort +"/"+ Common.Constants.PUPPET_MASTER_SERVICE_NAME;
+            
+            IDictionary RemoteChannelProperties = new Dictionary<string, string>();
+            RemoteChannelProperties["port"] = (Port-10000).ToString();
+            RemoteChannelProperties["name"] = Username;
+
+            TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
+           
+            ChannelServices.RegisterChannel(channel, true);
+
+            //TODO: uncomment and fix this to make it work
             PuppetMasterService pms = (PuppetMasterService)Activator.GetObject(
                 typeof(PuppetMasterService),
                 connectionString);
-            */
+            
             try
             {
-                /*TODO: uncomment and fix this to make it work
-                pms.registerServer("Worlds_First_PACMAN_Server", "203.89.2.3", 88822, "Wasifs_Dummy_Service");
-                textBox2.Text = "PuppetMasterService called!";
-                 * */
+                //TODO: uncomment and fix this to make it work
+                pms.registerClient(Username, Helper.getIPAddress(), Port);
+                show("Connected to PuppetMaster on "+connectionString);
+                System.Console.ReadLine();     
             }
             catch (SocketException)
             {
-                System.Console.WriteLine("Could not locate server");
+                show("Unable to connect to server");
                 //textBox2.Text = "Unable to connect! bad monkey!";
             }
         }

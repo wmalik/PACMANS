@@ -19,6 +19,8 @@ using System.Net;
 using System.Collections;
 
 using Common.Beans;
+using Client.Services;
+using Common.Slots;
 
 namespace PuppetMaster
 {
@@ -117,7 +119,7 @@ namespace PuppetMaster
             TreeNode newNode = new TreeNode(cm.Username);
             int index = treeView1.Nodes.IndexOfKey("Clients");
             treeView1.Nodes[index].Nodes.Insert(0, newNode);
-            show(cm.Username + " just came online");
+            show(cm.Username + " ("+cm.IP_Addr+":"+cm.Port+") just came online");
 
         }
 
@@ -184,10 +186,8 @@ namespace PuppetMaster
 
         private void createRes_Click(object sender, EventArgs e)
         {
-            //TODO: fetch selected username
-            //TODO: get ip_addr, port, service of the first username from hashtable or dict
-            //TODO: connect to the service
-            //TODO: call the createReservation(args) method of the remote object 
+            //TODO: fetch the reservation data from textfields
+            //TODO: call the facadeservice.createReservation() function
         }
 
         private void disconnectMenuItem_Click(object sender, EventArgs e)
@@ -195,53 +195,128 @@ namespace PuppetMaster
 
             //fetch selected username
             string username = treeView1.SelectedNode.Text;
-            string parent = treeView1.SelectedNode.Parent.Text;
-            string ip_addr;
-            int port;
 
+            if (username.Equals("Servers") || username.Equals("Clients"))
+                return;
+
+            string parent = treeView1.SelectedNode.Parent.Text;
+
+         
             //get ip_addr, port, service of the selected server (or client) from hashtable or dict
             if (parent.Equals("Servers"))
             {
                 ServerMetadata sm = (ServerMetadata)pms.getServersList()[username];
-                ip_addr = sm.IP_Addr;
-                port = sm.Port;
+                //ip_addr = sm.IP_Addr;
+                //port = sm.Port;
             }
 
             else if (parent.Equals("Clients"))
             {
                 ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
-                ip_addr = cm.IP_Addr;
-                port = cm.Port;
+                //fetching the remote object reference
+                IFacadeService fs = (IFacadeService)pms.getClientFacadeList()[username];
+
+                //calling disconnect
+                fs.Disconnect();
+
+                show(username + " has been disconnected"); //TODO: ADD CONSTANT OF SERVICE NAME
+
+                //changing the icon
+                treeView1.SelectedNode.ImageIndex = 1;
+                treeView1.SelectedNode.SelectedImageIndex = 1;
+
             }
             else
             {
                 return;
             }
-            //TODO: connect to the service (if not already connected)
-            show("TODO: connect to the service (if not already connected)");
-            //TODO: call the disconnectClient(args) method of the remote object 
-            show("TODO: call the disconnectClient(args) method of the remote object");
-            show("IP:"+ip_addr+" port:"+port+" service:"); //TODO: ADD CONSTANT OF SERVICE NAME
-            //TODO:
-            show("TODO: remove the server from tree");
-            treeView1.SelectedNode.Remove();
-
+          
         }
 
         private void readCalMenuItem_Click(object sender, EventArgs e)
         {
-            //TODO: fetch selected username
-            //TODO: get ip_addr, port, service of the selected username from hashtable or dict
-            //TODO: connect to the service (if not already connected)
-            //TODO: get the Calendar state by calling readCalendar(args) method of the remote object
+            
+            //fetch selected username
+            string username = treeView1.SelectedNode.Text;
+
+            if (username.Equals("Servers") || username.Equals("Clients"))
+                return;
+
+            string parent = treeView1.SelectedNode.Parent.Text;
+
+            if (parent.Equals("Servers"))
+            {
+                ServerMetadata sm = (ServerMetadata)pms.getServersList()[username];
+                //ip_addr = sm.IP_Addr;
+                //port = sm.Port;
+            }
+
+            else if (parent.Equals("Clients"))
+            {
+                ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
+
+                //fetching the remote object reference
+                IFacadeService fs = (IFacadeService)pms.getClientFacadeList()[username];
+
+                Dictionary<int, CalendarSlot> calendar = fs.ReadCalendar();
+
+                    show("Calendar for "+username + " has been retrieved");
+                    //TODO: show the calendar in a readable format
+                
+            }
+            else
+            {
+                return;
+            }
+
+
+
         }
 
         private void connectMenuItem_Click(object sender, EventArgs e)
         {
-            //TODO: fetch selected username
-            //TODO: get ip_addr, port, service of the selected username from hashtable or dict
-            //TODO: connect to the service (if not already connected)
-            //TODO: call the connectClient(args) method of the remote object 
+
+            //fetch selected username
+            string username = treeView1.SelectedNode.Text;
+
+            if (username.Equals("Servers") || username.Equals("Clients"))
+                return;
+
+            string parent = treeView1.SelectedNode.Parent.Text;
+
+
+            if (parent.Equals("Servers"))
+            {
+                ServerMetadata sm = (ServerMetadata)pms.getServersList()[username];
+            }
+
+            else if (parent.Equals("Clients"))
+            {
+                ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
+                
+                //fetching the remote object reference
+                IFacadeService fs = (IFacadeService)pms.getClientFacadeList()[username];
+
+                fs.Connect();
+
+                show(username + " has been connected");
+
+                //updating the icon
+                treeView1.SelectedNode.ImageIndex = 0;
+                treeView1.SelectedNode.SelectedImageIndex = 0;
+                
+            }
+            else
+            {
+                return;
+            }
+
+
+        }
+
+        private void groupBox1_Enter(object sender, EventArgs e)
+        {
+
         }
     }
 }

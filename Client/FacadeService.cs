@@ -8,13 +8,14 @@ using Common.Beans;
 
 namespace Client
 {
-    public class FacadeService : IFacadeService
+    public class FacadeService : MarshalByRefObject, IFacadeService
     {
         public bool Connect()
         {
             //let everyone know that I am going offline
             //set the isOnline flag to false
             //return;
+            Console.WriteLine("Connected");
 
             return true;
         }
@@ -24,7 +25,7 @@ namespace Client
             //let everyone know that I am going offline
             //set the isOnline flag to false
             //return;
-
+            Console.WriteLine("Disconnected");
             return true;
         }
 

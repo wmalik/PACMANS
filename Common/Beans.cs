@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Net;
 
 namespace Common.Beans
 {
@@ -74,6 +75,24 @@ namespace Common.Beans
             set;
         }
 
+    }
+
+    public static class Helper
+    {
+        public static string getIPAddress()
+        {
+            IPHostEntry host;
+            string localIP = "?";
+            host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (IPAddress ip in host.AddressList)
+            {
+                if (ip.AddressFamily.ToString() == "InterNetwork")
+                {
+                    localIP = ip.ToString();
+                }
+            }
+            return localIP;
+        }
     }
 
 }

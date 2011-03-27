@@ -30,15 +30,10 @@
         {
             this.components = new System.ComponentModel.Container();
             System.Windows.Forms.TreeNode treeNode1 = new System.Windows.Forms.TreeNode("server_1");
-            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("server_2");
-            System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("server_3");
-            System.Windows.Forms.TreeNode treeNode4 = new System.Windows.Forms.TreeNode("Servers", new System.Windows.Forms.TreeNode[] {
-            treeNode1,
-            treeNode2,
-            treeNode3});
-            System.Windows.Forms.TreeNode treeNode5 = new System.Windows.Forms.TreeNode("client_1");
-            System.Windows.Forms.TreeNode treeNode6 = new System.Windows.Forms.TreeNode("Clients", new System.Windows.Forms.TreeNode[] {
-            treeNode5});
+            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("Servers", new System.Windows.Forms.TreeNode[] {
+            treeNode1});
+            System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("Clients");
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PuppetGUI));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.treeView1 = new System.Windows.Forms.TreeView();
@@ -58,6 +53,7 @@
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.consoleBox = new System.Windows.Forms.TextBox();
+            this.imageList1 = new System.Windows.Forms.ImageList(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -89,8 +85,8 @@
             this.splitContainer1.Panel2.Controls.Add(this.southPanel);
             this.splitContainer1.Panel2.ImeMode = System.Windows.Forms.ImeMode.NoControl;
             this.splitContainer1.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.splitContainer1.Size = new System.Drawing.Size(324, 294);
-            this.splitContainer1.SplitterDistance = 157;
+            this.splitContainer1.Size = new System.Drawing.Size(471, 299);
+            this.splitContainer1.SplitterDistance = 159;
             this.splitContainer1.TabIndex = 0;
             // 
             // splitContainer2
@@ -106,32 +102,31 @@
             // splitContainer2.Panel2
             // 
             this.splitContainer2.Panel2.Controls.Add(this.groupBox1);
-            this.splitContainer2.Size = new System.Drawing.Size(324, 157);
-            this.splitContainer2.SplitterDistance = 98;
+            this.splitContainer2.Size = new System.Drawing.Size(471, 159);
+            this.splitContainer2.SplitterDistance = 142;
             this.splitContainer2.TabIndex = 0;
             // 
             // treeView1
             // 
             this.treeView1.ContextMenuStrip = this.rightClickStrip;
             this.treeView1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.treeView1.ImageIndex = 0;
+            this.treeView1.ImageList = this.imageList1;
             this.treeView1.Location = new System.Drawing.Point(0, 0);
             this.treeView1.Name = "treeView1";
             treeNode1.Name = "Node4";
             treeNode1.Text = "server_1";
-            treeNode2.Name = "Node5";
-            treeNode2.Text = "server_2";
-            treeNode3.Name = "Node6";
-            treeNode3.Text = "server_3";
-            treeNode4.Name = "Servers";
-            treeNode4.Text = "Servers";
-            treeNode5.Name = "Node2";
-            treeNode5.Text = "client_1";
-            treeNode6.Name = "Clients";
-            treeNode6.Text = "Clients";
+            treeNode2.ImageIndex = -2;
+            treeNode2.Name = "Servers";
+            treeNode2.Text = "Servers";
+            treeNode3.ImageIndex = -2;
+            treeNode3.Name = "Clients";
+            treeNode3.Text = "Clients";
             this.treeView1.Nodes.AddRange(new System.Windows.Forms.TreeNode[] {
-            treeNode4,
-            treeNode6});
-            this.treeView1.Size = new System.Drawing.Size(98, 157);
+            treeNode2,
+            treeNode3});
+            this.treeView1.SelectedImageIndex = 0;
+            this.treeView1.Size = new System.Drawing.Size(142, 159);
             this.treeView1.TabIndex = 0;
             this.treeView1.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeView1_AfterSelect);
             // 
@@ -148,21 +143,21 @@
             // disconnectMenuItem
             // 
             this.disconnectMenuItem.Name = "disconnectMenuItem";
-            this.disconnectMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.disconnectMenuItem.Size = new System.Drawing.Size(150, 22);
             this.disconnectMenuItem.Text = "Disconnect";
             this.disconnectMenuItem.Click += new System.EventHandler(this.disconnectMenuItem_Click);
             // 
             // connectMenuItem
             // 
             this.connectMenuItem.Name = "connectMenuItem";
-            this.connectMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.connectMenuItem.Size = new System.Drawing.Size(150, 22);
             this.connectMenuItem.Text = "Connect";
             this.connectMenuItem.Click += new System.EventHandler(this.connectMenuItem_Click);
             // 
             // readCalMenuItem
             // 
             this.readCalMenuItem.Name = "readCalMenuItem";
-            this.readCalMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.readCalMenuItem.Size = new System.Drawing.Size(150, 22);
             this.readCalMenuItem.Text = "Read Calendar";
             this.readCalMenuItem.Click += new System.EventHandler(this.readCalMenuItem_Click);
             // 
@@ -178,10 +173,11 @@
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox1.Location = new System.Drawing.Point(0, 0);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(222, 157);
+            this.groupBox1.Size = new System.Drawing.Size(325, 159);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Create Reservation";
+            this.groupBox1.Enter += new System.EventHandler(this.groupBox1_Enter);
             // 
             // createRes
             // 
@@ -256,7 +252,7 @@
             this.southPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.southPanel.Location = new System.Drawing.Point(0, 0);
             this.southPanel.Name = "southPanel";
-            this.southPanel.Size = new System.Drawing.Size(324, 133);
+            this.southPanel.Size = new System.Drawing.Size(471, 136);
             this.southPanel.TabIndex = 0;
             // 
             // tabControl1
@@ -266,7 +262,7 @@
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(324, 133);
+            this.tabControl1.Size = new System.Drawing.Size(471, 136);
             this.tabControl1.TabIndex = 0;
             // 
             // tabPage1
@@ -275,7 +271,7 @@
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(316, 107);
+            this.tabPage1.Size = new System.Drawing.Size(463, 110);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Console";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -287,15 +283,22 @@
             this.consoleBox.Multiline = true;
             this.consoleBox.Name = "consoleBox";
             this.consoleBox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.consoleBox.Size = new System.Drawing.Size(310, 101);
+            this.consoleBox.Size = new System.Drawing.Size(457, 104);
             this.consoleBox.TabIndex = 0;
+            // 
+            // imageList1
+            // 
+            this.imageList1.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList1.ImageStream")));
+            this.imageList1.TransparentColor = System.Drawing.Color.Transparent;
+            this.imageList1.Images.SetKeyName(0, "Button White Check.png");
+            this.imageList1.Images.SetKeyName(1, "Stop.png");
             // 
             // PuppetGUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(324, 294);
+            this.ClientSize = new System.Drawing.Size(471, 299);
             this.Controls.Add(this.splitContainer1);
             this.Name = "PuppetGUI";
             this.Text = "PuppetGUI";
@@ -342,6 +345,7 @@
         private System.Windows.Forms.ToolStripMenuItem disconnectMenuItem;
         private System.Windows.Forms.ToolStripMenuItem connectMenuItem;
         private System.Windows.Forms.ToolStripMenuItem readCalMenuItem;
+        private System.Windows.Forms.ImageList imageList1;
     }
 }
 

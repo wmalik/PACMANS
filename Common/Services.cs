@@ -4,14 +4,15 @@ using System.Linq;
 using System.Text;
 using Common.Beans;
 using Common.Slots;
+using System.Runtime.Remoting;
 
 
 namespace Client.Services
 {
 
-    /* SERVICES EXPOSED TO THE PUPPER MASTER */
+    /* SERVICES EXPOSED TO THE PUPPET MASTER */
 
-    interface IFacadeService
+    public interface IFacadeService
     {
         bool Connect();
 

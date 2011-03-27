@@ -5,13 +5,22 @@ using System.Text;
 using System.Collections;
 using System.Windows.Forms;
 using Common.Beans;
+using System.Runtime.Remoting.Channels.Tcp;
+using System.Runtime.Remoting.Channels;
+using Client.Services;
+using System.Net.Sockets;
+
+
+
 
 namespace PuppetMaster
 {
-    class PuppetMasterService : MarshalByRefObject
+    public class PuppetMasterService : MarshalByRefObject
     {
         Hashtable clients_list = new Hashtable();
         Hashtable servers_list = new Hashtable();
+        Hashtable clientFacadeList = new Hashtable();
+
         public PuppetMasterService()
         {
         }
@@ -37,6 +46,47 @@ namespace PuppetMaster
             return this.servers_list;
         }
 
+        public Hashtable getClientFacadeList()
+        {
+            return this.clientFacadeList;
+        }
+
+        private IFacadeService connectToClientFacadeService(ClientMetadata cm)
+        {
+            
+            //connect to PuppetMaster here
+            String connectionString = "tcp://" + cm.IP_Addr + ":" + cm.Port + "/" + cm.Username + "/"+Common.Constants.FACADE_SERVICE_NAME;
+
+            IDictionary RemoteChannelProperties = new Dictionary<string, string>();
+            //RemoteChannelProperties["port"] = (Port - 10000).ToString();
+            RemoteChannelProperties["name"] = cm.Username;
+
+            TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
+
+            ChannelServices.RegisterChannel(channel, true);
+
+            //TODO: uncomment and fix this to make it work
+            IFacadeService facadeService = (IFacadeService)Activator.GetObject(
+                typeof(IFacadeService),
+                connectionString);
+
+            try
+            {
+                //TODO: uncomment and fix this to make it work
+                //pms.registerClient(Username, Helper.getIPAddress(), Port);
+                //show("Connected to PuppetMaster on " + connectionString);
+                //System.Console.ReadLine();
+            }
+            catch (SocketException)
+            {
+                //show("Unable to connect to server");
+                //textBox2.Text = "Unable to connect! bad monkey!";
+            }
+
+            return facadeService;
+             
+             
+        }
         public bool registerClient(string username, string ip_addr, int port)
         {
             
@@ -48,8 +98,12 @@ namespace PuppetMaster
             
             //adding the client metadata to the global hashtable so that it can be used later on
             clients_list.Add(username, cm);
+
+            //TODO:
+            IFacadeService facadeService = connectToClientFacadeService(cm);
+            clientFacadeList.Add(username, facadeService);
             
-            //TODO: update the Clients tree in PuppetGUI
+            //update the Clients tree in PuppetGUI
             Gui.updateClientsTree(cm, null);
 
            // MessageBox.Show(username+" has joined!");
