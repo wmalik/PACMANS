@@ -5,14 +5,17 @@
   <PuppetMasterIP>192.168.0.129</PuppetMasterIP>
   <PuppetMasterPort>34243</PuppetMasterPort>
   <Server>
-    <ip>127.0.0.1</ip>
-    <port>50001</port>
+    <id>Server1</id>
+    <ip>192.168.0.129</ip>
+    <port>40010</port>
   </Server>
   <Server>
+    <id>Server1</id>
     <ip>127.0.0.1</ip>
     <port>50002</port>
   </Server>
   <Server>
+    <id>Server1</id>
     <ip>127.0.0.1</ip>
     <port>50003</port>
   </Server>

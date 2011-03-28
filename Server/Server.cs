@@ -86,8 +86,8 @@ namespace Server
         void IServer.Init()
         {
             RegisterChannel();
-            StartFacade();
-            //StartServices(); should be done by the Connect method
+            //StartFacade(); //Cannot register two interfaces of the same object, so not exposing the facade services for now...
+            StartServices(); //Should be done by the Connect method
             NotifyPuppetMaster();
         }
 
@@ -111,6 +111,7 @@ namespace Server
         void StartServices()
         {
             //Lookup Service
+            //TODO: should have a separate object for this later on
             string serviceName = _username + "/" + Common.Constants.LOOKUP_SERVICE_NAME;
             Helper.StartService(_username, _port, serviceName, this, typeof(ILookupService));
         }
@@ -185,11 +186,14 @@ namespace Server
             client.Port = port;
             client.Username = username;
 
+            Log.Show(_username, "Registered client " + username + ": " + ip + ":" + port);
+
             _clients[username] = client;
         }
 
         void ILookupService.UnregisterUser(string username)
         {
+            Log.Show(_username, "Unregistered client: " + username);
             _clients.Remove(username);
         }
 
@@ -197,14 +201,18 @@ namespace Server
         {
             ClientMetadata lookedUp;
             if (_clients.TryGetValue(username, out lookedUp)){
+                Log.Show(_username, "Client info retrieved: " + username);
                 return lookedUp;
             }
 
+            Log.Show(_username, "No client info found: " + username);
             return null;
         }
 
         int ILookupService.NextSequenceNumber()
         {
+            Log.Show(_username, "Sequence number retrieved. Next sequence number is: " + _sequenceNumber+1);
+
             return _sequenceNumber++;
         }
     }

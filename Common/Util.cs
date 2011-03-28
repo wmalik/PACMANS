@@ -31,7 +31,20 @@ namespace Common.Util
 
         public static ILookupService GetRandomServer(List<ServerMetadata> servers)
         {
-            return null;
+
+            //TODO current implementation just get first server from list
+            ServerMetadata chosenServer = servers[0];
+
+            String connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + chosenServer.Username + "/" + Common.Constants.LOOKUP_SERVICE_NAME;
+
+            Log.Show("bla","Trying to lookup service: " + connectionString);
+
+            ILookupService server = (ILookupService)Activator.GetObject(
+                typeof(ILookupService),
+                connectionString);
+
+
+            return server;
         }
 
         public static void StartService(string username, int port, string serviceName, MarshalByRefObject obj, Type requestedType)

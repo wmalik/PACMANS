@@ -62,12 +62,15 @@ namespace Client
             _puppetPort = Convert.ToInt32(puppetmasterportlist[0].InnerText);
             _servers = new List<ServerMetadata>();
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 1; i++)
             {
+                //TODO: currently just reading first server
                 XmlNodeList server_ipportlist = serverslist[i].ChildNodes;
-                string ip_addr = server_ipportlist[0].InnerText;
-                int port = Convert.ToInt32(server_ipportlist[1].InnerText);
+                string id = server_ipportlist[0].InnerText;
+                string ip_addr = server_ipportlist[1].InnerText;
+                int port = Convert.ToInt32(server_ipportlist[2].InnerText);
                 ServerMetadata sm = new ServerMetadata();
+                sm.Username = id;
                 sm.IP_Addr = ip_addr;
                 sm.Port = port;
                 _servers.Add(sm);
@@ -149,7 +152,7 @@ namespace Client
             {
                 _isOnline = true;
                 StartServices();
-                //Helper.GetRandomServer(_servers).RegisterUser(_username, _port
+                Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
                 Log.Show(_username, "Client is connected.");
                 return true;
             }
@@ -163,7 +166,7 @@ namespace Client
             {
                 _isOnline = false;
                 StopServices();
-                //Helper.GetRandomServer(_servers).UnregisterUser(_username);
+                Helper.GetRandomServer(_servers).UnregisterUser(_username);
                 //Broadcast offline information to initiators of ongoing reservations
                 Log.Show(_username, "Client is disconnected.");
                 return true;
