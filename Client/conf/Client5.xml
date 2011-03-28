@@ -2,7 +2,7 @@
 <config>
 <Username>Client5</Username>
 <Port>40005</Port>
-  <PuppetMasterIP>192.168.1.84</PuppetMasterIP>
+  <PuppetMasterIP>192.168.0.129</PuppetMasterIP>
   <PuppetMasterPort>34243</PuppetMasterPort>
   <Server>
     <ip>127.0.0.1</ip>
@@ -15,9 +15,5 @@
   <Server>
     <ip>127.0.0.1</ip>
     <port>50003</port>
-  </Server>
-  <Server>
-    <ip>127.0.0.1</ip>
-    <port>50004</port>
   </Server>
 </config>

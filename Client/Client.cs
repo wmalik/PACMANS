@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Common.Util;
 using Common.Beans;
 using System.Xml;
 using System.Runtime.Remoting;
@@ -9,44 +10,43 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
 using System.Net.Sockets;
 using Common.Slots;
+using Common.Services;
 using PuppetMaster;
 using System.Collections;
+using Client.Services;
+using Server.Services;
 
 
 namespace Client
 {
     public interface IClient
     {
-        void init();
+        void Init();
     }
 
-    public class Client : IClient
+    public class Client : MarshalByRefObject, IClient, IFacadeService
     {
-        private Dictionary<int, CalendarSlot> calendar;
-        private string Username;
-        private int Port;
-        private string PuppetIP;
-        private int PuppetPort;
-        private List<ServerMetadata> servers;
-        private string filename;
-        private FacadeService fc;
+
+        private string _username; //c# convention for private vars, from http://10rem.net/articles/net-naming-conventions-and-programming-standards---best-practices :P
+        private int _port;
+        private string _puppetIP;
+        private int _puppetPort;
+        private List<ServerMetadata> _servers;
+
+        private ISlotManager _slotManager;
+
+        private bool _isOnline;
 
         public Client(string filename)
         {
-            this.filename = filename;
+            ReadConfigurationFile(filename);
+            _isOnline = false;
+            _slotManager = new SlotManager(_username, _port, _servers);
         }
 
-        public void init()
-        {
-            readConfigurationFile(this.filename);
-            startFacadeService();
-            connectToPuppetMaster();
-        }
-
-        private void readConfigurationFile(string filename)
+        private void ReadConfigurationFile(string filename)
         {
             string current_dir = System.IO.Directory.GetCurrentDirectory();
-            //string filename = "Client.xml";
             XmlDocument xmlDoc = new XmlDocument(); //* create an xml document object.
             xmlDoc.Load(filename); //* load the XML document from the specified file.
 
@@ -55,15 +55,14 @@ namespace Client
             XmlNodeList puppetmasteriplist = xmlDoc.GetElementsByTagName("PuppetMasterIP");
             XmlNodeList puppetmasterportlist = xmlDoc.GetElementsByTagName("PuppetMasterPort");
             XmlNodeList serverslist = xmlDoc.GetElementsByTagName("Server");
-            
 
-            Username = usernamelist[0].InnerText; 
-            Port = Convert.ToInt32(portlist[0].InnerText);
-            PuppetIP = puppetmasteriplist[0].InnerText;
-            PuppetPort = Convert.ToInt32(puppetmasterportlist[0].InnerText);
-            servers = new List<ServerMetadata>();
-            
-            for (int i = 0; i < 4; i++)
+            _username = usernamelist[0].InnerText;
+            _port = Convert.ToInt32(portlist[0].InnerText);
+            _puppetIP = puppetmasteriplist[0].InnerText;
+            _puppetPort = Convert.ToInt32(puppetmasterportlist[0].InnerText);
+            _servers = new List<ServerMetadata>();
+
+            for (int i = 0; i < 3; i++)
             {
                 XmlNodeList server_ipportlist = serverslist[i].ChildNodes;
                 string ip_addr = server_ipportlist[0].InnerText;
@@ -71,75 +70,115 @@ namespace Client
                 ServerMetadata sm = new ServerMetadata();
                 sm.IP_Addr = ip_addr;
                 sm.Port = port;
-                servers.Add(sm);
+                _servers.Add(sm);
             }
         }
 
-        
+        /*
+         * Implements IClient
+         */
 
-        private void startFacadeService()
+        void IClient.Init()
+        {
+            RegisterChannel();
+            RegisterServices();
+            LookupRemoteServices();
+            NotifyPuppetMaster();
+        }
+
+        private void RegisterChannel()
+        {
+            IDictionary RemoteChannelProperties = new Dictionary<string, string>();
+            RemoteChannelProperties["port"] = _port.ToString();
+            RemoteChannelProperties["name"] = _username ;
+            TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
+            ChannelServices.RegisterChannel(channel, true);
+        }
+
+        void RegisterServices()
         {
 
-            IDictionary RemoteChannelProperties = new Dictionary<string, string>();
-            RemoteChannelProperties["port"] = Port.ToString();
-            RemoteChannelProperties["name"] = Username+" FacadeService";
-            TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
-            //TcpChannel channel = new TcpChannel(Port);
-            string user = Username;
-            ChannelServices.RegisterChannel(channel, true);
+            //Facade Service
+            string serviceName = _username + "/" + Common.Constants.FACADE_SERVICE_NAME;
+            RemotingServices.Marshal(this, serviceName, typeof(IFacadeService));
+            string serviceString = "tcp://" + Helper.GetIPAddress() + ":" + _port + "/" + serviceName;
+            Log.Show(_username, "Started " + serviceString);
+        }
 
-            fc = new FacadeService();
-            string service_name = Username + "/" + Common.Constants.FACADE_SERVICE_NAME;
-            RemotingServices.Marshal(fc, service_name, typeof(FacadeService));
+        void LookupRemoteServices()
+        {
 
-
-            /*
-             RemotingConfiguration.RegisterWellKnownServiceType(
-                 typeof(PuppetMasterService),
-                 service,
-                 WellKnownObjectMode.Singleton);
-             */
-
-            string service_string = "tcp://" + Helper.getIPAddress() + ":" + Port + "/" + service_name;
-            show("Started " + service_string);
 
         }
 
-        private void show(string msg)
+        private void NotifyPuppetMaster()
         {
-            Console.WriteLine("["+ Username +"] "+msg);
-        }
 
-        private void connectToPuppetMaster()
-        {
-            //connect to PuppetMaster here
-            String connectionString = "tcp://" + PuppetIP + ":" + PuppetPort +"/"+ Common.Constants.PUPPET_MASTER_SERVICE_NAME;
-            
-            IDictionary RemoteChannelProperties = new Dictionary<string, string>();
-            RemoteChannelProperties["port"] = (Port-10000).ToString();
-            RemoteChannelProperties["name"] = Username;
+            String connectionString = "tcp://" + _puppetIP + ":" + _puppetPort + "/" + Common.Constants.PUPPET_MASTER_SERVICE_NAME;
 
-            TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
-           
-            ChannelServices.RegisterChannel(channel, true);
-
-            //TODO: uncomment and fix this to make it work
             PuppetMasterService pms = (PuppetMasterService)Activator.GetObject(
                 typeof(PuppetMasterService),
                 connectionString);
             
             try
             {
-                //TODO: uncomment and fix this to make it work
-                pms.registerClient(Username, Helper.getIPAddress(), Port);
-                show("Connected to PuppetMaster on "+connectionString);
-                System.Console.ReadLine();     
+                Log.Show(_username, "Trying to connect to Pupper Master on: " + connectionString);
+                pms.registerClient(_username, Helper.GetIPAddress(), _port);
+                Log.Show(_username, "Sucessfully registered client on Pupper Master.");
+                System.Console.ReadLine();
             }
             catch (SocketException)
             {
-                show("Unable to connect to server");
+                Log.Show(_username, "Unable to connect to Pupper Master.");
                 //textBox2.Text = "Unable to connect! bad monkey!";
             }
         }
+
+
+
+        /*
+         * Implements IFacadeService
+         */
+
+        bool IFacadeService.Connect()
+        {
+            if (!_isOnline)
+            {
+                _isOnline = true;
+                //Helper.GetRandomServer(_servers).RegisterUser(_username, _port);
+                Log.Show(_username, "Client is connected.");
+                return true;
+            }
+
+            return false;
+        }
+
+        bool IFacadeService.Disconnect()
+        { 
+            if (_isOnline)
+            {
+                _isOnline = false;
+                //Helper.GetRandomServer(_servers).UnregisterUser(_username);
+                //Broadcast offline information to initiators of ongoing reservations
+                Log.Show(_username, "Client is disconnected.");
+                return true;
+            }
+
+
+            return false;
+        }
+
+
+        Dictionary<int, CalendarSlot> IFacadeService.ReadCalendar()
+        {
+            return null;
+        }
+
+         bool IFacadeService.CreateReservation(ReservationRequest reservation)
+        {
+
+            return _slotManager.StartReservation(reservation);
+        }
+
     }
 }

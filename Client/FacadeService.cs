@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Client.Services;
+using Common.Services;
 using Common.Slots;
 using Common.Beans;
 

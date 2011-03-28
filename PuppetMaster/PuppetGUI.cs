@@ -19,7 +19,7 @@ using System.Net;
 using System.Collections;
 
 using Common.Beans;
-using Client.Services;
+using Common.Services;
 using Common.Slots;
 
 namespace PuppetMaster
@@ -80,7 +80,7 @@ namespace PuppetMaster
             
             pms = new PuppetMasterService();
             pms.Gui = this;
-            RemotingServices.Marshal(pms,service, typeof(PuppetMasterService));
+            RemotingServices.Marshal(pms,Common.Constants.PUPPET_MASTER_SERVICE_NAME, typeof(PuppetMasterService));
             
             
            /*
@@ -90,7 +90,7 @@ namespace PuppetMaster
                 WellKnownObjectMode.Singleton);
             */
 
-            string service_string = "tcp://" + getIPAddress() + ":" + port + "/" + service;
+            string service_string = "tcp://" + getIPAddress() + ":" + port + "/" + Common.Constants.PUPPET_MASTER_SERVICE_NAME;
             show("Started "+service_string);
             
         }

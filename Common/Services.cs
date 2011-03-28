@@ -7,10 +7,10 @@ using Common.Slots;
 using System.Runtime.Remoting;
 
 
-namespace Client.Services
+namespace Common.Services
 {
 
-    /* SERVICES EXPOSED TO THE PUPPET MASTER */
+    /* SERVICE EXPOSED FROM CLIENT TO THE PUPPER MASTER */
 
     public interface IFacadeService
     {
@@ -23,27 +23,18 @@ namespace Client.Services
         bool CreateReservation(ReservationRequest reservation);
     }
 
-    /* SERVICES EXPOSED TO THE CLIENTS */
+    /* SERVICE EXPOSED FROM SERVER TO THE CLIENTS */
 
-
-    interface IBookingService
+    public interface ILookupService
     {
 
-        List<ReservationSlot> InitReservation(Reservation res);
+        void RegisterUser(string username, int port);
 
-        void BookSlot(int resID, int slotID);
+        void UnregisterUser(string username);
 
-        bool BookReply(int resID, int slotID, string userID);
+        ClientMetadata Lookup(string username);
 
-        void PreCommit(int resId, int slotID);
-
-        bool PreCommitReply(int resId, int slotID, string userID);
-
-        void DoCommit(int resId, int slotID);
-
-        bool DoCommitReply(int resId, int slotID, string userID);
-
-        bool Abort(int resId, int slotID, string userID);
+        int NextSequenceNumber();
 
     }
 

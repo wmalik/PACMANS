@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net;
+﻿using System.Collections.Generic;
 
 namespace Common.Beans
 {
@@ -10,19 +6,25 @@ namespace Common.Beans
     public class ReservationRequest
     {
 
+        public int ReservationID
+        {
+            get;
+            set;
+        }
+
         public string Description
         {
             get;
             set;
         }
 
-        public string[] Users
+        public List<string> Users
         {
             get;
             set;
         }
 
-        public int[] Slots
+        public List<int> Slots
         {
             get;
             set;
@@ -75,24 +77,6 @@ namespace Common.Beans
             set;
         }
 
-    }
-
-    public static class Helper
-    {
-        public static string getIPAddress()
-        {
-            IPHostEntry host;
-            string localIP = "?";
-            host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (IPAddress ip in host.AddressList)
-            {
-                if (ip.AddressFamily.ToString() == "InterNetwork")
-                {
-                    localIP = ip.ToString();
-                }
-            }
-            return localIP;
-        }
     }
 
 }

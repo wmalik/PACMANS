@@ -11,33 +11,33 @@ namespace Client
     {
         static void Main(string[] args)
         {
-            Client client1 = new Client("conf/Client1.xml");
-            Thread t1 = new Thread(client1.init);
+            IClient client1 = new Client("conf/Client1.xml");
+            Thread t1 = new Thread(client1.Init);
             t1.Start();
 
             Thread.Sleep(1000);
 
-            
-            Client client2 = new Client("conf/Client2.xml");
-            Thread t2 = new Thread(client2.init);
+
+            IClient client2 = new Client("conf/Client2.xml");
+            Thread t2 = new Thread(client2.Init);
             t2.Start();
             
             Thread.Sleep(1000);
 
-            Client client3 = new Client("conf/Client3.xml");
-            Thread t3 = new Thread(client3.init);
+            IClient client3 = new Client("conf/Client3.xml");
+            Thread t3 = new Thread(client3.Init);
             t3.Start();
 
             Thread.Sleep(1000);
-            
-            Client client4 = new Client("conf/Client4.xml");
-            Thread t4 = new Thread(client4.init);
+
+            IClient client4 = new Client("conf/Client4.xml");
+            Thread t4 = new Thread(client4.Init);
             t4.Start();
 
             Thread.Sleep(1000);
 
-            Client client5 = new Client("conf/Client5.xml");
-            Thread t5 = new Thread(client5.init);
+            IClient client5 = new Client("conf/Client5.xml");
+            Thread t5 = new Thread(client5.Init);
             t5.Start();
 
         }

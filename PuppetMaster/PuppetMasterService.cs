@@ -7,7 +7,7 @@ using System.Windows.Forms;
 using Common.Beans;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
-using Client.Services;
+using Common.Services;
 using System.Net.Sockets;
 
 
