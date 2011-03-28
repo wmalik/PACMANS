@@ -214,7 +214,7 @@ namespace PuppetMaster
             {
                 ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
                 //fetching the remote object reference
-                IFacadeService fs = (IFacadeService)pms.getClientFacadeList()[username];
+                IClientFacade fs = (IClientFacade)pms.getClientFacadeList()[username];
 
                 //calling disconnect
                 fs.Disconnect();
@@ -256,7 +256,7 @@ namespace PuppetMaster
                 ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
 
                 //fetching the remote object reference
-                IFacadeService fs = (IFacadeService)pms.getClientFacadeList()[username];
+                IClientFacade fs = (IClientFacade)pms.getClientFacadeList()[username];
 
                 Dictionary<int, CalendarSlot> calendar = fs.ReadCalendar();
 
@@ -295,7 +295,7 @@ namespace PuppetMaster
                 ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
                 
                 //fetching the remote object reference
-                IFacadeService fs = (IFacadeService)pms.getClientFacadeList()[username];
+                IClientFacade fs = (IClientFacade)pms.getClientFacadeList()[username];
 
                 fs.Connect();
 

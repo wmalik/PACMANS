@@ -19,7 +19,7 @@ namespace Client
         Dictionary<int, CalendarSlot> ReadCalendar();
     }
 
-    public class SlotManager :  IBookingService, ISlotManager
+    public class SlotManager :  MarshalByRefObject, IBookingService, ISlotManager
     {
 
         private Dictionary<int, CalendarSlot> _calendar;
@@ -39,32 +39,70 @@ namespace Client
             _servers = servers;
         }
 
-        bool ISlotManager.StartReservation(ReservationRequest req)
+        public bool StartReservation(ReservationRequest req)
         {
+            //Updates request with sequence number
+            req.ReservationID = RetrieveSequenceNumber();
 
-            int seqNumber = -1;
+            //Create and populate local reservation
+            Reservation res = CreateReservation(req, _userName, Helper.GetIPAddress(), _port);
 
-            while (seqNumber == -1)
+            foreach (int slot in req.Slots)
             {
-                try
-                {
-                    seqNumber = Helper.GetRandomServer(_servers).NextSequenceNumber();
-                    req.ReservationID = seqNumber;
+                ReservationSlot rs = new ReservationSlot(req.ReservationID, slot, ReservationSlotState.INITIATED);
+                res.Slots[slot] = rs;
+            }
 
-                }
-                catch (SocketException)
-                {
-                    //will try to get another server in next iteration
+            //Add reservation to map of active reservations
+            _activeReservations[res.ReservationID] = res;
+
+            //Retrieve user's metadata
+            List<ClientMetadata> onlineUsers = new List<ClientMetadata>();
+            ILookupService server = Helper.GetRandomServer(_servers);
+            for(int i=0; i<req.Users.Count; i++){
+                try {
+                    string userID = req.Users[i];
+                    ClientMetadata participantInfo = Helper.GetRandomServer(_servers).Lookup(userID);
+                } catch (SocketException) {
+                    //server has failed
+                    //update server reference and decrease loop counter
+                    server = Helper.GetRandomServer(_servers);
+                    i--;
                 }
             }
 
-            Reservation res = CreateReservation(req, _userName, Helper.GetIPAddress(), _port);
-            _activeReservations[res.ReservationID] = res;
+            if (onlineUsers.Count != req.Users.Count)
+            {
+                //Not all users are online, what to do!?
+            }
+
+            foreach(ClientMetadata clientMd in onlineUsers){
+
+
+            }
+
 
             return false;
         }
 
-        Dictionary<int, CalendarSlot> ISlotManager.ReadCalendar()
+        private int RetrieveSequenceNumber()
+        {
+            int seqNumber = -1;
+
+            while (seqNumber == -1)
+            {
+                try {
+                    seqNumber = Helper.GetRandomServer(_servers).NextSequenceNumber();
+                } catch (SocketException) {
+                    //server has failed
+                    //will try to get another server in next iteration
+                }
+            }
+
+            return seqNumber;
+        }
+
+        public Dictionary<int, CalendarSlot> ReadCalendar()
         {
             throw new NotImplementedException();
         }
@@ -121,6 +159,7 @@ namespace Client
         {
             throw new NotImplementedException();
         }
+
 
     }
 }

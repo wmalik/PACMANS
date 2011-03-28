@@ -13,35 +13,40 @@ using Common.Slots;
 using Common.Services;
 using PuppetMaster;
 using System.Collections;
-using Client.Services;
 using Server.Services;
 
-
-namespace Client
+namespace Server
 {
-    public interface IClient
+    public interface IServer
     {
         void Init();
     }
 
-    public class Client : MarshalByRefObject, IClient, IClientFacade
+
+    //TODO: maybe it's better to implement lookup service in a separate manager
+    //it is here just for the purpose of testing
+    public class Server : MarshalByRefObject, IServer, IServerFacade, ILookupService
     {
 
-        private string _username; //c# convention for private vars, from http://10rem.net/articles/net-naming-conventions-and-programming-standards---best-practices :P
+        private string _username;
         private int _port;
         private string _puppetIP;
         private int _puppetPort;
         private List<ServerMetadata> _servers;
 
-        private SlotManager _slotManager;
+
+        //TODO: Temporary vars, move to some separate manager later
+        private int _sequenceNumber;
+        private Dictionary<string, ClientMetadata> _clients;
+
 
         private bool _isOnline;
 
-        public Client(string filename)
+        public Server(string filename)
         {
+            _sequenceNumber = 0;
+            _clients = new Dictionary<string, ClientMetadata>();
             ReadConfigurationFile(filename);
-            _isOnline = false;
-            _slotManager = new SlotManager(_username, _port, _servers);
         }
 
         private void ReadConfigurationFile(string filename)
@@ -62,7 +67,7 @@ namespace Client
             _puppetPort = Convert.ToInt32(puppetmasterportlist[0].InnerText);
             _servers = new List<ServerMetadata>();
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 2; i++)
             {
                 XmlNodeList server_ipportlist = serverslist[i].ChildNodes;
                 string ip_addr = server_ipportlist[0].InnerText;
@@ -75,13 +80,14 @@ namespace Client
         }
 
         /*
-         * Implements IClient
+         * Implements IServer
          */
 
-        void IClient.Init()
+        void IServer.Init()
         {
             RegisterChannel();
             StartFacade();
+            //StartServices(); should be done by the Connect method
             NotifyPuppetMaster();
         }
 
@@ -89,29 +95,30 @@ namespace Client
         {
             IDictionary RemoteChannelProperties = new Dictionary<string, string>();
             RemoteChannelProperties["port"] = _port.ToString();
-            RemoteChannelProperties["name"] = _username ;
+            RemoteChannelProperties["name"] = _username;
             TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
             ChannelServices.RegisterChannel(channel, true);
         }
 
         void StartFacade()
         {
+
             //Facade Service
             string serviceName = _username + "/" + Common.Constants.FACADE_SERVICE_NAME;
-            Helper.StartService(_username, _port, serviceName, this, typeof(IClientFacade));
+            Helper.StartService(_username, _port, serviceName, this, typeof(IServerFacade));
         }
 
-        void StartServices() {
-        
-            //Booking Service
-            string serviceName = _username + "/" + Common.Constants.BOOKING_SERVICE_NAME;
-            Helper.StartService(_username, _port, serviceName, _slotManager, typeof(IBookingService));
+        void StartServices()
+        {
+            //Lookup Service
+            string serviceName = _username + "/" + Common.Constants.LOOKUP_SERVICE_NAME;
+            Helper.StartService(_username, _port, serviceName, this, typeof(ILookupService));
         }
 
         void StopServices()
         {
-            //Booking Service
-            Helper.StopService(_username, "Booking service", _slotManager);
+            //Lookup Service
+            Helper.StopService(_username, "Booking service", this);
         }
 
         private void NotifyPuppetMaster()
@@ -126,7 +133,7 @@ namespace Client
             try
             {
                 Log.Show(_username, "Trying to connect to Pupper Master on: " + connectionString);
-                pms.registerClient(_username, Helper.GetIPAddress(), _port);
+                pms.registerServer(_username, Helper.GetIPAddress(), _port);
                 Log.Show(_username, "Sucessfully registered client on Pupper Master.");
                 System.Console.ReadLine();
             }
@@ -137,35 +144,30 @@ namespace Client
             }
         }
 
-
-
         /*
          * Implements IFacadeService
          */
 
-        bool IClientFacade.Connect()
+        bool IServerFacade.Connect()
         {
             if (!_isOnline)
             {
                 _isOnline = true;
                 StartServices();
-                //Helper.GetRandomServer(_servers).RegisterUser(_username, _port
-                Log.Show(_username, "Client is connected.");
+                Log.Show(_username, "Server is connected.");
                 return true;
             }
 
             return false;
         }
 
-        bool IClientFacade.Disconnect()
+        bool IServerFacade.Disconnect()
         { 
             if (_isOnline)
             {
                 _isOnline = false;
-                StopServices();
-                //Helper.GetRandomServer(_servers).UnregisterUser(_username);
-                //Broadcast offline information to initiators of ongoing reservations
-                Log.Show(_username, "Client is disconnected.");
+                //StopServices(); TODO: since facade and lookup are implemented by this same object, stopping it will probably stop both services
+                Log.Show(_username, "Server is disconnected.");
                 return true;
             }
 
@@ -174,17 +176,36 @@ namespace Client
         }
 
 
-        Dictionary<int, CalendarSlot> IClientFacade.ReadCalendar()
+
+
+        void ILookupService.RegisterUser(string username, string ip, int port)
         {
-            return _slotManager.ReadCalendar();
+            ClientMetadata client = new ClientMetadata();
+            client.IP_Addr = ip;
+            client.Port = port;
+            client.Username = username;
+
+            _clients[username] = client;
         }
 
-         bool IClientFacade.CreateReservation(ReservationRequest reservation)
+        void ILookupService.UnregisterUser(string username)
         {
-
-
-            return _slotManager.StartReservation(reservation);
+            _clients.Remove(username);
         }
 
+        ClientMetadata ILookupService.Lookup(string username)
+        {
+            ClientMetadata lookedUp;
+            if (_clients.TryGetValue(username, out lookedUp)){
+                return lookedUp;
+            }
+
+            return null;
+        }
+
+        int ILookupService.NextSequenceNumber()
+        {
+            return _sequenceNumber++;
+        }
     }
 }

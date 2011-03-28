@@ -5,6 +5,9 @@ using System.Text;
 using System.Net;
 using Common.Services;
 using Common.Beans;
+using System.Runtime.Remoting;
+using System.Runtime.Remoting.Channels.Tcp;
+using System.Runtime.Remoting.Channels;
 
 namespace Common.Util
 {
@@ -29,6 +32,21 @@ namespace Common.Util
         public static ILookupService GetRandomServer(List<ServerMetadata> servers)
         {
             return null;
+        }
+
+        public static void StartService(string username, int port, string serviceName, MarshalByRefObject obj, Type requestedType)
+        {
+            RemotingServices.Marshal(obj, serviceName, requestedType);
+            string serviceString = "tcp://" + GetIPAddress() + ":" + port + "/" + serviceName;
+            Log.Show(username, "Started service: " + serviceString);
+        }
+
+        public static void StopService(string username, string objName, MarshalByRefObject obj)
+        {
+            if (RemotingServices.Disconnect(obj))
+            {
+                Log.Show(username, "Stopped service: " + objName);
+            }
         }
     }
 

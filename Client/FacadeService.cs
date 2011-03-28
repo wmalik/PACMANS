@@ -8,7 +8,7 @@ using Common.Beans;
 
 namespace Client
 {
-    public class FacadeService : MarshalByRefObject, IFacadeService
+    public class FacadeService : MarshalByRefObject, IClientFacade
     {
         public bool Connect()
         {

@@ -51,7 +51,7 @@ namespace PuppetMaster
             return this.clientFacadeList;
         }
 
-        private IFacadeService connectToClientFacadeService(ClientMetadata cm)
+        private IClientFacade connectToClientFacadeService(ClientMetadata cm)
         {
             
             //connect to PuppetMaster here
@@ -66,8 +66,8 @@ namespace PuppetMaster
             ChannelServices.RegisterChannel(channel, true);
 
             //TODO: uncomment and fix this to make it work
-            IFacadeService facadeService = (IFacadeService)Activator.GetObject(
-                typeof(IFacadeService),
+            IClientFacade facadeService = (IClientFacade)Activator.GetObject(
+                typeof(IClientFacade),
                 connectionString);
 
             try
@@ -100,7 +100,7 @@ namespace PuppetMaster
             clients_list.Add(username, cm);
 
             //TODO:
-            IFacadeService facadeService = connectToClientFacadeService(cm);
+            IClientFacade facadeService = connectToClientFacadeService(cm);
             clientFacadeList.Add(username, facadeService);
             
             //update the Clients tree in PuppetGUI
