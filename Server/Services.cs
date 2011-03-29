@@ -13,9 +13,9 @@ namespace Server.Services
     interface IConsistencyService
     {
 
-        bool WriteClientMetadata(ClientMetadata clientInfo);
+//        bool WriteClientMetadata(ClientMetadata clientInfo);
 
-        ClientMetadata ReadClientMetadata();
+ //       ClientMetadata ReadClientMetadata();
 
         bool WriteSequenceNumber(int seqNum);
 

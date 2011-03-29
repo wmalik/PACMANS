@@ -14,6 +14,7 @@ using Common.Services;
 using PuppetMaster;
 using System.Collections;
 using Server.Services;
+using System.Threading;
 
 namespace Server
 {
@@ -33,7 +34,7 @@ namespace Server
         private string _puppetIP;
         private int _puppetPort;
         private List<ServerMetadata> _servers;
-
+        ServerAction action;
 
         //TODO: Temporary vars, move to some separate manager later
         private int _sequenceNumber;
@@ -46,6 +47,7 @@ namespace Server
         {
             _sequenceNumber = 0;
             _clients = new Dictionary<string, ClientMetadata>();
+            action = new ServerAction();
             ReadConfigurationFile(filename);
         }
 
@@ -88,6 +90,7 @@ namespace Server
             RegisterChannel();
             //StartFacade(); //Cannot register two interfaces of the same object, so not exposing the facade services for now...
             StartServices(); //Should be done by the Connect method
+            StartConsistencyService();
             NotifyPuppetMaster();
         }
 
@@ -106,6 +109,12 @@ namespace Server
             //Facade Service
             string serviceName = _username + "/" + Common.Constants.FACADE_SERVICE_NAME;
             Helper.StartService(_username, _port, serviceName, this, typeof(IServerFacade));
+        }
+
+        void StartConsistencyService()
+        {
+            string serviceName = _username + "/" + Common.Constants.CONSISTENCY_SERVICE_NAME;
+            Helper.StartService(_username, _port, serviceName, action , typeof(IConsistencyService));
         }
 
         void StartServices()
@@ -211,9 +220,40 @@ namespace Server
 
         int ILookupService.NextSequenceNumber()
         {
-            Log.Show(_username, "Sequence number retrieved. Next sequence number is: " + _sequenceNumber+1);
-
+            Log.Show(_username, "Sequence number retrieved. Next sequence number is: " + _sequenceNumber + 1);           
+            callOtherServers();  //to test client functionality, comment this line to generate sequence number from one server.
             return _sequenceNumber++;
+
+        }
+
+        private void callOtherServers() 
+        {
+             IConsistencyService[] server = new IConsistencyService[_servers.Count];
+            for (int i = 0; i < _servers.Count; i++)
+            {
+                server[i] = getOtherServers(_servers[i]);
+            }
+
+            Thread t1 = new Thread(() => server[0].WriteSequenceNumber(_sequenceNumber));
+            t1.Start();
+            Thread t2 = new Thread(() => server[1].WriteSequenceNumber(_sequenceNumber));
+            t2.Start();
+
+        }
+
+
+        private IConsistencyService getOtherServers(ServerMetadata servers)
+        {
+                ServerMetadata chosenServer = servers;
+                String connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + _username + "/" + Common.Constants.CONSISTENCY_SERVICE_NAME;
+                Log.Show(_username, "Trying to find server: " + connectionString);
+
+                IConsistencyService server = (IConsistencyService)Activator.GetObject(
+                    typeof(IConsistencyService),
+                    connectionString);
+
+                return server;
+       
         }
     }
 }

@@ -2,12 +2,12 @@
 <config>
 <Username>Client3</Username>
 <Port>40003</Port>
-  <PuppetMasterIP>192.168.0.129</PuppetMasterIP>
+  <PuppetMasterIP>127.0.0.1</PuppetMasterIP>
   <PuppetMasterPort>34243</PuppetMasterPort>
   <Server>
     <id>Server1</id>
-    <ip>192.168.0.129</ip>
-    <port>40010</port>
+    <ip>127.0.0.1</ip>
+    <port>50001</port>
   </Server>
   <Server>
     <id>Server1</id>
