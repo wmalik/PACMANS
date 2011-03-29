@@ -20,6 +20,5 @@ namespace Server.Services
         bool WriteSequenceNumber(int seqNum);
 
         int ReadSequenceNumber();
-
     }
 }

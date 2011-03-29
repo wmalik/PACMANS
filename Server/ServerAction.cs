@@ -19,10 +19,42 @@ namespace Server
 {
     public class ServerAction : MarshalByRefObject, IConsistencyService
     {
+        private int _lastSeenSequenceNumber;
+
+        public ServerAction()
+        {
+            _lastSeenSequenceNumber = 0;
+        }
+
+        //private IConsistencyService getInvokingServer(ServerMetadata server, string username)
+        //{
+        //    ServerMetadata chosenServer = server;
+        //    String connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + username + "/" + Common.Constants.CONSISTENCY_SERVICE_NAME;
+        //    Log.Show(username, "Trying to find server: " + connectionString);
+
+        //    IConsistencyService invokingServer = (IConsistencyService)Activator.GetObject(
+        //        typeof(IConsistencyService),
+        //        connectionString);
+
+        //    return invokingServer;
+
+        //}
 
         public bool WriteSequenceNumber(int seqNum)
         {
             Console.WriteLine("WriteSeqnum successfully invoked,{0}", seqNum);
+            if (seqNum > _lastSeenSequenceNumber)
+            {
+                _lastSeenSequenceNumber = seqNum;
+
+                return true;
+            }
+
+            else
+            {
+                //Yet to handle.
+            }
+
             return false;
         }
 

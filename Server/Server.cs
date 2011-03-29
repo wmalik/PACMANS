@@ -234,7 +234,8 @@ namespace Server
                 server[i] = getOtherServers(_servers[i]);
             }
 
-            Thread t1 = new Thread(() => server[0].WriteSequenceNumber(_sequenceNumber));
+           // This isnt a good idea, needs to be changed. Jusr experimenting.
+            Thread t1 = new Thread(() => server[0].WriteSequenceNumber(++_sequenceNumber));
             t1.Start();
             Thread t2 = new Thread(() => server[1].WriteSequenceNumber(_sequenceNumber));
             t2.Start();
