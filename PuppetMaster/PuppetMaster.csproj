@@ -97,6 +97,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="config\events.txt" />
     <Content Include="config\puppetmaster.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>

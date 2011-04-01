@@ -8,6 +8,7 @@ using Common.Beans;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
+using System.IO;
 
 namespace Common.Util
 {
@@ -70,6 +71,15 @@ namespace Common.Util
         {
             Console.WriteLine("[" + DateTime.Now.ToString("T") + "][" + username + "] " + msg);
         }
+
+        public static void WriteToFile(StreamWriter logfile, string username, string msg)
+        {
+            string logmsg ="[" + DateTime.Now.ToString("T") + "][" + username + "] " + msg;
+            logfile.WriteLine(logmsg);
+            logfile.Flush();
+
+        }
+
     }
 
 }

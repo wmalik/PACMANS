@@ -23,7 +23,7 @@ namespace Common.Services
         bool CreateReservation(ReservationRequest reservation);
     }
 
-    /* SERVICE EXPOSED FROM SERVER TO THE PUPPER MASTER */
+    /* SERVICE EXPOSED FROM SERVER TO THE PUPPET MASTER */
 
     public interface IServerFacade
     {

@@ -29,10 +29,8 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.TreeNode treeNode1 = new System.Windows.Forms.TreeNode("server_1");
-            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("Servers", new System.Windows.Forms.TreeNode[] {
-            treeNode1});
-            System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("Clients");
+            System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("Servers", 2, 2);
+            System.Windows.Forms.TreeNode treeNode4 = new System.Windows.Forms.TreeNode("Clients", 8, 8);
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PuppetGUI));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
@@ -41,19 +39,20 @@
             this.disconnectMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.connectMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.readCalMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.imageList1 = new System.Windows.Forms.ImageList(this.components);
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.createRes = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
-            this.textBox3 = new System.Windows.Forms.TextBox();
-            this.textBox2 = new System.Windows.Forms.TextBox();
-            this.textBox1 = new System.Windows.Forms.TextBox();
             this.southPanel = new System.Windows.Forms.Panel();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.consoleBox = new System.Windows.Forms.TextBox();
-            this.imageList1 = new System.Windows.Forms.ImageList(this.components);
+            this.loadEventsButton = new System.Windows.Forms.Button();
+            this.slotsBox = new System.Windows.Forms.TextBox();
+            this.usersBox = new System.Windows.Forms.TextBox();
+            this.descBox = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -85,8 +84,8 @@
             this.splitContainer1.Panel2.Controls.Add(this.southPanel);
             this.splitContainer1.Panel2.ImeMode = System.Windows.Forms.ImeMode.NoControl;
             this.splitContainer1.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.splitContainer1.Size = new System.Drawing.Size(471, 299);
-            this.splitContainer1.SplitterDistance = 159;
+            this.splitContainer1.Size = new System.Drawing.Size(784, 564);
+            this.splitContainer1.SplitterDistance = 335;
             this.splitContainer1.TabIndex = 0;
             // 
             // splitContainer2
@@ -97,13 +96,14 @@
             // 
             // splitContainer2.Panel1
             // 
+            this.splitContainer2.Panel1.Controls.Add(this.loadEventsButton);
             this.splitContainer2.Panel1.Controls.Add(this.treeView1);
             // 
             // splitContainer2.Panel2
             // 
             this.splitContainer2.Panel2.Controls.Add(this.groupBox1);
-            this.splitContainer2.Size = new System.Drawing.Size(471, 159);
-            this.splitContainer2.SplitterDistance = 142;
+            this.splitContainer2.Size = new System.Drawing.Size(784, 335);
+            this.splitContainer2.SplitterDistance = 236;
             this.splitContainer2.TabIndex = 0;
             // 
             // treeView1
@@ -114,19 +114,19 @@
             this.treeView1.ImageList = this.imageList1;
             this.treeView1.Location = new System.Drawing.Point(0, 0);
             this.treeView1.Name = "treeView1";
-            treeNode1.Name = "Node4";
-            treeNode1.Text = "server_1";
-            treeNode2.ImageIndex = -2;
-            treeNode2.Name = "Servers";
-            treeNode2.Text = "Servers";
-            treeNode3.ImageIndex = -2;
-            treeNode3.Name = "Clients";
-            treeNode3.Text = "Clients";
+            treeNode3.ImageIndex = 2;
+            treeNode3.Name = "Servers";
+            treeNode3.SelectedImageIndex = 2;
+            treeNode3.Text = "Servers";
+            treeNode4.ImageIndex = 8;
+            treeNode4.Name = "Clients";
+            treeNode4.SelectedImageIndex = 8;
+            treeNode4.Text = "Clients";
             this.treeView1.Nodes.AddRange(new System.Windows.Forms.TreeNode[] {
-            treeNode2,
-            treeNode3});
+            treeNode3,
+            treeNode4});
             this.treeView1.SelectedImageIndex = 0;
-            this.treeView1.Size = new System.Drawing.Size(142, 159);
+            this.treeView1.Size = new System.Drawing.Size(236, 335);
             this.treeView1.TabIndex = 0;
             this.treeView1.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeView1_AfterSelect);
             // 
@@ -161,19 +161,32 @@
             this.readCalMenuItem.Text = "Read Calendar";
             this.readCalMenuItem.Click += new System.EventHandler(this.readCalMenuItem_Click);
             // 
+            // imageList1
+            // 
+            this.imageList1.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList1.ImageStream")));
+            this.imageList1.TransparentColor = System.Drawing.Color.Transparent;
+            this.imageList1.Images.SetKeyName(0, "Button White Check.png");
+            this.imageList1.Images.SetKeyName(1, "Stop.png");
+            this.imageList1.Images.SetKeyName(2, "Database.png");
+            this.imageList1.Images.SetKeyName(3, "iPhone.png");
+            this.imageList1.Images.SetKeyName(4, "colloquy.ico");
+            this.imageList1.Images.SetKeyName(5, "delete.ico");
+            this.imageList1.Images.SetKeyName(6, "plus.ico");
+            this.imageList1.Images.SetKeyName(7, "tick.ico");
+            this.imageList1.Images.SetKeyName(8, "user.ico");
+            // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.descBox);
+            this.groupBox1.Controls.Add(this.usersBox);
+            this.groupBox1.Controls.Add(this.slotsBox);
             this.groupBox1.Controls.Add(this.createRes);
             this.groupBox1.Controls.Add(this.label3);
             this.groupBox1.Controls.Add(this.label2);
             this.groupBox1.Controls.Add(this.label1);
-            this.groupBox1.Controls.Add(this.textBox3);
-            this.groupBox1.Controls.Add(this.textBox2);
-            this.groupBox1.Controls.Add(this.textBox1);
-            this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.groupBox1.Location = new System.Drawing.Point(0, 0);
+            this.groupBox1.Location = new System.Drawing.Point(6, 5);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(325, 159);
+            this.groupBox1.Size = new System.Drawing.Size(217, 128);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Create Reservation";
@@ -218,33 +231,6 @@
             this.label1.Text = "Description";
             this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
-            // textBox3
-            // 
-            this.textBox3.AcceptsTab = true;
-            this.textBox3.Location = new System.Drawing.Point(68, 71);
-            this.textBox3.Name = "textBox3";
-            this.textBox3.Size = new System.Drawing.Size(100, 20);
-            this.textBox3.TabIndex = 0;
-            // 
-            // textBox2
-            // 
-            this.textBox2.AcceptsTab = true;
-            this.textBox2.Location = new System.Drawing.Point(68, 45);
-            this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(100, 20);
-            this.textBox2.TabIndex = 0;
-            // 
-            // textBox1
-            // 
-            this.textBox1.AcceptsReturn = true;
-            this.textBox1.AcceptsTab = true;
-            this.textBox1.AllowDrop = true;
-            this.textBox1.Location = new System.Drawing.Point(68, 19);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(100, 20);
-            this.textBox1.TabIndex = 0;
-            this.textBox1.Tag = "";
-            // 
             // southPanel
             // 
             this.southPanel.AutoSize = true;
@@ -252,7 +238,7 @@
             this.southPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.southPanel.Location = new System.Drawing.Point(0, 0);
             this.southPanel.Name = "southPanel";
-            this.southPanel.Size = new System.Drawing.Size(471, 136);
+            this.southPanel.Size = new System.Drawing.Size(784, 225);
             this.southPanel.TabIndex = 0;
             // 
             // tabControl1
@@ -262,7 +248,7 @@
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(471, 136);
+            this.tabControl1.Size = new System.Drawing.Size(784, 225);
             this.tabControl1.TabIndex = 0;
             // 
             // tabPage1
@@ -271,7 +257,7 @@
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(463, 110);
+            this.tabPage1.Size = new System.Drawing.Size(776, 199);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Console";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -283,25 +269,55 @@
             this.consoleBox.Multiline = true;
             this.consoleBox.Name = "consoleBox";
             this.consoleBox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.consoleBox.Size = new System.Drawing.Size(457, 104);
+            this.consoleBox.Size = new System.Drawing.Size(770, 193);
             this.consoleBox.TabIndex = 0;
             // 
-            // imageList1
+            // loadEventsButton
             // 
-            this.imageList1.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList1.ImageStream")));
-            this.imageList1.TransparentColor = System.Drawing.Color.Transparent;
-            this.imageList1.Images.SetKeyName(0, "Button White Check.png");
-            this.imageList1.Images.SetKeyName(1, "Stop.png");
+            this.loadEventsButton.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.loadEventsButton.Location = new System.Drawing.Point(0, 312);
+            this.loadEventsButton.Name = "loadEventsButton";
+            this.loadEventsButton.Size = new System.Drawing.Size(236, 23);
+            this.loadEventsButton.TabIndex = 1;
+            this.loadEventsButton.Text = "Load events from file";
+            this.loadEventsButton.UseVisualStyleBackColor = true;
+            this.loadEventsButton.Click += new System.EventHandler(this.loadEventsButton_Click);
+            // 
+            // slotsBox
+            // 
+            this.slotsBox.Location = new System.Drawing.Point(72, 71);
+            this.slotsBox.Name = "slotsBox";
+            this.slotsBox.Size = new System.Drawing.Size(100, 20);
+            this.slotsBox.TabIndex = 3;
+            this.slotsBox.Text = "1,2,3";
+            // 
+            // usersBox
+            // 
+            this.usersBox.Location = new System.Drawing.Point(72, 45);
+            this.usersBox.Name = "usersBox";
+            this.usersBox.Size = new System.Drawing.Size(100, 20);
+            this.usersBox.TabIndex = 3;
+            this.usersBox.Text = "Client5,Client2";
+            // 
+            // descBox
+            // 
+            this.descBox.Location = new System.Drawing.Point(72, 19);
+            this.descBox.Name = "descBox";
+            this.descBox.Size = new System.Drawing.Size(100, 20);
+            this.descBox.TabIndex = 3;
+            this.descBox.Text = "Birthday Party";
             // 
             // PuppetGUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(471, 299);
+            this.ClientSize = new System.Drawing.Size(784, 564);
             this.Controls.Add(this.splitContainer1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "PuppetGUI";
-            this.Text = "PuppetGUI";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.Text = "PACMANS - Puppet Master";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Shown += new System.EventHandler(this.PuppetGUI_Shown);
             this.splitContainer1.Panel1.ResumeLayout(false);
@@ -333,9 +349,6 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.TextBox textBox3;
-        private System.Windows.Forms.TextBox textBox2;
-        private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.Button createRes;
         private System.Windows.Forms.Panel southPanel;
         private System.Windows.Forms.TabControl tabControl1;
@@ -346,6 +359,10 @@
         private System.Windows.Forms.ToolStripMenuItem connectMenuItem;
         private System.Windows.Forms.ToolStripMenuItem readCalMenuItem;
         private System.Windows.Forms.ImageList imageList1;
+        private System.Windows.Forms.Button loadEventsButton;
+        private System.Windows.Forms.TextBox descBox;
+        private System.Windows.Forms.TextBox usersBox;
+        private System.Windows.Forms.TextBox slotsBox;
     }
 }
 

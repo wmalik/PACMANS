@@ -16,7 +16,9 @@ namespace Common
 
         public static string CONSISTENCY_SERVICE_NAME = "CONSISTENCY_SERVICE";
 
-        public static string FACADE_SERVICE_NAME = "FACADE_SERVICE";
+        public static string CLIENT_FACADE_SERVICE = "CLIENT_FACADE_SERVICE";
+
+        public static string SERVER_FACADE_SERVICE = "SERVER_FACADE_SERVICE";
 
         public static string BOOKING_SERVICE_NAME = "BOOKING_SERVICE";
 

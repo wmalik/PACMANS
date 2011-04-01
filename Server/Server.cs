@@ -107,7 +107,7 @@ namespace Server
         {
 
             //Facade Service
-            string serviceName = _username + "/" + Common.Constants.FACADE_SERVICE_NAME;
+            string serviceName = _username + "/" + Common.Constants.SERVER_FACADE_SERVICE;
             Helper.StartService(_username, _port, serviceName, this, typeof(IServerFacade));
         }
 
@@ -142,15 +142,14 @@ namespace Server
             
             try
             {
-                Log.Show(_username, "Trying to connect to Pupper Master on: " + connectionString);
+                Log.Show(_username, "Trying to connect to Puppet Master on: " + connectionString);
                 pms.registerServer(_username, Helper.GetIPAddress(), _port);
                 Log.Show(_username, "Sucessfully registered client on Pupper Master.");
                 System.Console.ReadLine();
             }
             catch (SocketException)
             {
-                Log.Show(_username, "Unable to connect to Pupper Master.");
-                //textBox2.Text = "Unable to connect! bad monkey!";
+                Log.Show(_username, "Unable to connect to Puppet Master.");
             }
         }
 
@@ -220,7 +219,7 @@ namespace Server
 
         int ILookupService.NextSequenceNumber()
         {
-            Log.Show(_username, "Sequence number retrieved. Next sequence number is: " + _sequenceNumber + 1);           
+            Log.Show(_username, "Sequence number retrieved. Next sequence number is: " + (_sequenceNumber+1));           
             callOtherServers();  //to test client functionality, comment this line to generate sequence number from one server.
             return _sequenceNumber++;
 

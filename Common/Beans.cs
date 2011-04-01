@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
+using System;
 
 namespace Common.Beans
 {
-
+    [Serializable]
     public class ReservationRequest
     {
 
@@ -32,7 +33,7 @@ namespace Common.Beans
 
     }
 
-
+    [Serializable]
     public class ClientMetadata
     {
 
@@ -56,6 +57,7 @@ namespace Common.Beans
 
     }
 
+    [Serializable]
     public class ServerMetadata
     {
 

@@ -15,6 +15,7 @@ using PuppetMaster;
 using System.Collections;
 using Client.Services;
 using Server.Services;
+using System.IO;
 
 
 namespace Client
@@ -37,11 +38,16 @@ namespace Client
 
         private bool _isOnline;
 
+        private StreamWriter _logfile;
+
         public Client(string filename)
         {
             ReadConfigurationFile(filename);
             _isOnline = false;
             _slotManager = new SlotManager(_username, _port, _servers);
+            _logfile = new StreamWriter("log/log_client_"+_username+".txt", true);
+            _logfile.WriteLine("-");
+            _logfile.AutoFlush = true;
         }
 
         private void ReadConfigurationFile(string filename)
@@ -100,8 +106,9 @@ namespace Client
         void StartFacade()
         {
             //Facade Service
-            string serviceName = _username + "/" + Common.Constants.FACADE_SERVICE_NAME;
+            string serviceName = _username + "/" + Common.Constants.CLIENT_FACADE_SERVICE;
             Helper.StartService(_username, _port, serviceName, this, typeof(IClientFacade));
+            Log.WriteToFile(_logfile, _username, "Started Facade service");
         }
 
         void StartServices() {
@@ -109,12 +116,14 @@ namespace Client
             //Booking Service
             string serviceName = _username + "/" + Common.Constants.BOOKING_SERVICE_NAME;
             Helper.StartService(_username, _port, serviceName, _slotManager, typeof(IBookingService));
+            Log.WriteToFile(_logfile, _username, "Started booking service");
         }
 
         void StopServices()
         {
             //Booking Service
             Helper.StopService(_username, "Booking service", _slotManager);
+            Log.WriteToFile(_logfile, _username, "Stopped booking service");
         }
 
         private void NotifyPuppetMaster()
@@ -130,13 +139,15 @@ namespace Client
             {
                 Log.Show(_username, "Trying to connect to Pupper Master on: " + connectionString);
                 pms.registerClient(_username, Helper.GetIPAddress(), _port);
-                Log.Show(_username, "Sucessfully registered client on Pupper Master.");
+                Log.Show(_username, "Sucessfully registered client on Puppet Master.");
+                Log.WriteToFile(_logfile, _username, "Sucessfully registered client on Puppet Master.");
+                
                 System.Console.ReadLine();
             }
             catch (SocketException)
             {
-                Log.Show(_username, "Unable to connect to Pupper Master.");
-                //textBox2.Text = "Unable to connect! bad monkey!";
+                Log.Show(_username, "Unable to connect to Puppet Master.");
+                Log.WriteToFile(_logfile, _username, "Unable to connect to Puppet Master");
             }
         }
 

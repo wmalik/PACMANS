@@ -20,6 +20,7 @@ namespace PuppetMaster
         Hashtable clients_list = new Hashtable();
         Hashtable servers_list = new Hashtable();
         Hashtable clientFacadeList = new Hashtable();
+        Hashtable serverFacadeList = new Hashtable();
 
         public PuppetMasterService()
         {
@@ -51,14 +52,18 @@ namespace PuppetMaster
             return this.clientFacadeList;
         }
 
+        public Hashtable getServerFacadeList()
+        {
+            return this.serverFacadeList;
+        }
+
         private IClientFacade connectToClientFacadeService(ClientMetadata cm)
         {
             
             //connect to PuppetMaster here
-            String connectionString = "tcp://" + cm.IP_Addr + ":" + cm.Port + "/" + cm.Username + "/"+Common.Constants.FACADE_SERVICE_NAME;
+            String connectionString = "tcp://" + cm.IP_Addr + ":" + cm.Port + "/" + cm.Username + "/"+Common.Constants.CLIENT_FACADE_SERVICE;
 
             IDictionary RemoteChannelProperties = new Dictionary<string, string>();
-            //RemoteChannelProperties["port"] = (Port - 10000).ToString();
             RemoteChannelProperties["name"] = cm.Username;
 
             TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
@@ -70,23 +75,34 @@ namespace PuppetMaster
                 typeof(IClientFacade),
                 connectionString);
 
-            try
-            {
-                //TODO: uncomment and fix this to make it work
-                //pms.registerClient(Username, Helper.getIPAddress(), Port);
-                //show("Connected to PuppetMaster on " + connectionString);
-                //System.Console.ReadLine();
-            }
-            catch (SocketException)
-            {
-                //show("Unable to connect to server");
-                //textBox2.Text = "Unable to connect! bad monkey!";
-            }
-
             return facadeService;
              
              
         }
+
+
+        private IServerFacade connectToServerFacadeService(ServerMetadata sm)
+        {
+
+            String connectionString = "tcp://" + sm.IP_Addr + ":" + sm.Port + "/" + sm.Username + "/" + Common.Constants.SERVER_FACADE_SERVICE;
+
+            IDictionary RemoteChannelProperties = new Dictionary<string, string>();
+            RemoteChannelProperties["name"] = sm.Username;
+
+            TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
+
+            ChannelServices.RegisterChannel(channel, true);
+
+            //TODO: uncomment and fix this to make it work
+            IServerFacade facadeService = (IServerFacade)Activator.GetObject(
+                typeof(IServerFacade),
+                connectionString);
+
+            return facadeService;
+
+        }
+
+
         public bool registerClient(string username, string ip_addr, int port)
         {
             
@@ -99,7 +115,6 @@ namespace PuppetMaster
             //adding the client metadata to the global hashtable so that it can be used later on
             clients_list.Add(username, cm);
 
-            //TODO:
             IClientFacade facadeService = connectToClientFacadeService(cm);
             clientFacadeList.Add(username, facadeService);
             
@@ -120,6 +135,8 @@ namespace PuppetMaster
 
             //adding the client metadata to the global hashtable so that it can be used later on
             servers_list.Add(username, sm);
+            IServerFacade isf = connectToServerFacadeService(sm);
+            serverFacadeList.Add(username, isf);
 
             //TODO: update the Servers tree in PuppetGUI
             Gui.updateServersTree(sm, null);

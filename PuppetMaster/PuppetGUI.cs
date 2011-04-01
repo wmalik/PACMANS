@@ -95,17 +95,6 @@ namespace PuppetMaster
             
         }
 
-        //developed for debugging
-        public void updateClientsTree()
-        {
- 
-        TreeNode newNode = new TreeNode("NewClient");
-        //treeView1.SelectedNode.Nodes.Add(newNode);
-        int index = treeView1.Nodes.IndexOfKey("Clients");
-        treeView1.Nodes[index].Nodes.Insert(0, "Client Wongo");
-      
-        }
-
         //used for adding clients in the treeview
         public void updateClientsTree(object sender, EventArgs ea)
         {
@@ -117,8 +106,10 @@ namespace PuppetMaster
 
             ClientMetadata cm = (ClientMetadata)sender;
             TreeNode newNode = new TreeNode(cm.Username);
+            newNode.Name = cm.Username;
             int index = treeView1.Nodes.IndexOfKey("Clients");
             treeView1.Nodes[index].Nodes.Insert(0, newNode);
+            newNode.Parent.Expand();
             show(cm.Username + " ("+cm.IP_Addr+":"+cm.Port+") just came online");
 
         }
@@ -135,14 +126,13 @@ namespace PuppetMaster
             }
             ServerMetadata sm = (ServerMetadata)sender;
             TreeNode newNode = new TreeNode(sm.Username);
-            //treeView1.SelectedNode.Nodes.Add(newNode);
+            newNode.Name = sm.Username;
             int index = treeView1.Nodes.IndexOfKey("Servers");
             treeView1.Nodes[index].Nodes.Insert(0, newNode);
+            newNode.Parent.Expand();
             show(sm.Username + " just came online");
 
         }
-
-        
 
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -186,8 +176,17 @@ namespace PuppetMaster
 
         private void createRes_Click(object sender, EventArgs e)
         {
-            //TODO: fetch the reservation data from textfields
-            //TODO: call the facadeservice.createReservation() function
+            string initiator = usersBox.Text.Split(',')[0];
+            List<string> usersList = usersBox.Text.Split(',').ToList<string>();
+            List<int> slotsList = slotsBox.Text.Split(',').ToList().ConvertAll<int>(Convert.ToInt32);
+            string desc = descBox.Text;
+
+            ReservationRequest rr = new ReservationRequest();
+            rr.Description = desc;
+            rr.Users = usersList;
+            rr.Slots = slotsList;
+            IClientFacade icf = (IClientFacade)pms.getClientFacadeList()[initiator];
+            icf.CreateReservation(rr);
         }
 
         private void disconnectMenuItem_Click(object sender, EventArgs e)
@@ -201,27 +200,23 @@ namespace PuppetMaster
 
             string parent = treeView1.SelectedNode.Parent.Text;
 
-         
-            //get ip_addr, port, service of the selected server (or client) from hashtable or dict
             if (parent.Equals("Servers"))
             {
                 ServerMetadata sm = (ServerMetadata)pms.getServersList()[username];
-                //ip_addr = sm.IP_Addr;
-                //port = sm.Port;
+                IServerFacade isf = (IServerFacade)pms.getServerFacadeList()[username];
+                //isf.Disconnect(); /*commented because Server Facade is not implemented yet*/
+                show("TODO: Server Facade to be implemented");
+                //show(username + " has been disconnected");
+                treeView1.SelectedNode.ImageIndex = 1;
+                treeView1.SelectedNode.SelectedImageIndex = 1;
             }
 
             else if (parent.Equals("Clients"))
             {
                 ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
-                //fetching the remote object reference
                 IClientFacade fs = (IClientFacade)pms.getClientFacadeList()[username];
-
-                //calling disconnect
                 fs.Disconnect();
-
-                show(username + " has been disconnected"); //TODO: ADD CONSTANT OF SERVICE NAME
-
-                //changing the icon
+                show(username + " has been disconnected");
                 treeView1.SelectedNode.ImageIndex = 1;
                 treeView1.SelectedNode.SelectedImageIndex = 1;
 
@@ -246,23 +241,16 @@ namespace PuppetMaster
 
             if (parent.Equals("Servers"))
             {
-                ServerMetadata sm = (ServerMetadata)pms.getServersList()[username];
-                //ip_addr = sm.IP_Addr;
-                //port = sm.Port;
+                MessageBox.Show("Are you out of your mind?");
             }
 
             else if (parent.Equals("Clients"))
             {
                 ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
-
-                //fetching the remote object reference
                 IClientFacade fs = (IClientFacade)pms.getClientFacadeList()[username];
-
                 Dictionary<int, CalendarSlot> calendar = fs.ReadCalendar();
-
-                    show("Calendar for "+username + " has been retrieved");
-                    //TODO: show the calendar in a readable format
-                
+                show("Calendar for "+username + " has been retrieved");
+                show("TODO: show the calendar");
             }
             else
             {
@@ -288,20 +276,20 @@ namespace PuppetMaster
             if (parent.Equals("Servers"))
             {
                 ServerMetadata sm = (ServerMetadata)pms.getServersList()[username];
+                IServerFacade isf = (IServerFacade)pms.getServerFacadeList()[username];
+                //isf.Connect(); /*commented because Server Facade is not implemented yet*/
+                show("TODO: Server Facade to be implemented");
+                //show(username + " is now connected");
+                treeView1.SelectedNode.ImageIndex = 0;
+                treeView1.SelectedNode.SelectedImageIndex = 0;
             }
 
             else if (parent.Equals("Clients"))
             {
                 ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
-                
-                //fetching the remote object reference
                 IClientFacade fs = (IClientFacade)pms.getClientFacadeList()[username];
-
                 fs.Connect();
-
                 show(username + " has been connected");
-
-                //updating the icon
                 treeView1.SelectedNode.ImageIndex = 0;
                 treeView1.SelectedNode.SelectedImageIndex = 0;
                 
@@ -316,6 +304,75 @@ namespace PuppetMaster
 
         private void groupBox1_Enter(object sender, EventArgs e)
         {
+
+        }
+
+        private void loadEventsButton_Click(object sender, EventArgs e)
+        {
+            string line = string.Empty;
+
+            OpenFileDialog openFileDialog1 = new OpenFileDialog();
+            openFileDialog1.Filter = "txt files (*.txt)|*.txt";
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                System.IO.StreamReader sr = new
+                System.IO.StreamReader(openFileDialog1.FileName);
+                 while ((line = sr.ReadLine()) != null)
+                 {
+                    show(line);
+                    string opcode = line.Split(' ')[0];
+                    string username;
+                    IClientFacade icf;
+                    IDictionary<int, CalendarSlot> clientCalendar;
+                     //TODO: fetch initiator from Users list
+
+                    switch(opcode)
+                    {
+                       case "disconnect":
+                            username = line.Split(' ')[1];
+                            icf = (IClientFacade)pms.getClientFacadeList()[username];
+                            icf.Disconnect();
+                            treeView1.Nodes.Find(username, true)[0].ImageIndex = 1;
+                            treeView1.Nodes.Find(username, true)[0].SelectedImageIndex = 1;
+                            break;
+                       case "connect":
+                          username = line.Split(' ')[1];
+                            icf = (IClientFacade)pms.getClientFacadeList()[username];
+                            icf.Connect();
+                            treeView1.Nodes.Find(username, true)[0].ImageIndex = 0;
+                            treeView1.Nodes.Find(username, true)[0].SelectedImageIndex = 0;
+                          break;
+                       case "readCalendar":
+                          username = line.Split(' ')[1];
+                          icf = (IClientFacade)pms.getClientFacadeList()[username];
+                          clientCalendar = icf.ReadCalendar();
+                          break;
+                       case "reservation":
+                          //reservation Description;userlist;slotlist;
+                          string initiator = line.Split(' ')[1].Split(';')[1].Split(',')[0];
+                          List<string> usersList = line.Split(' ')[1].Split(';')[1].Split(',').ToList<string>();
+                          List<int> slotsList = line.
+                              Split(' ')[1].
+                              Split(';')[2].
+                              Split(',').
+                              ToList<string>().
+                              ConvertAll<int>(Convert.ToInt32);
+                            string desc = line.Split(' ')[1].Split(';')[0];
+                          ReservationRequest rr = new ReservationRequest();
+                          rr.Description = desc;
+                          rr.Users = usersList;
+                          rr.Slots = slotsList;
+                          icf = (IClientFacade)pms.getClientFacadeList()[initiator];
+                          icf.CreateReservation(rr);
+                          break;
+                    }
+
+
+                 }
+              
+                sr.Close();
+            }
+
 
         }
     }
