@@ -186,7 +186,7 @@ namespace PuppetMaster
             rr.Users = usersList;
             rr.Slots = slotsList;
             IClientFacade icf = (IClientFacade)pms.getClientFacadeList()[initiator];
-            icf.CreateReservation(rr);
+            icf.CreateReservation(rr);  //There is an exception unhandled here.
         }
 
         private void disconnectMenuItem_Click(object sender, EventArgs e)

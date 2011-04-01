@@ -7,7 +7,7 @@
   <Server>
     <id>Server1</id>
     <ip>127.0.0.1</ip>
-    <port>50003</port>
+    <port>50001</port>
   </Server>
   <Server>
     <id>Server1</id>
@@ -17,6 +17,6 @@
   <Server>
     <id>Server1</id>
     <ip>127.0.0.1</ip>
-    <port>50001</port>
+    <port>50003</port>
   </Server>
 </config>

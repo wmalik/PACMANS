@@ -1,15 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <config>
  <Username>Server1</Username>
-<Port>50003</Port>
+<Port>50001</Port>
   <PuppetMasterIP>127.0.0.1</PuppetMasterIP>
   <PuppetMasterPort>34243</PuppetMasterPort>
   <Server>
-    <ip>127.0.0.1</ip>
-    <port>50001</port>
-  </Server>
-  <Server>
+    <id>Server2</id>
     <ip>127.0.0.1</ip>
     <port>50002</port>
+  </Server>
+  <Server>
+    <id>Server3</id>
+    <ip>127.0.0.1</ip>
+    <port>50003</port>
   </Server>
 </config>
