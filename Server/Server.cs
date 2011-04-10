@@ -28,11 +28,14 @@ namespace Server
     {
         public delegate bool RemoteAsyncDelegate();
         public bool _status;
+        public ManualResetEvent waiter = new ManualResetEvent(false);
+
         // This is the call that the AsyncCallBack delegate will reference.
         public void OurRemoteAsyncCallBack(IAsyncResult ar)
         {
             RemoteAsyncDelegate del = (RemoteAsyncDelegate)((AsyncResult)ar).AsyncDelegate;
             _status = del.EndInvoke(ar);
+            waiter.Set();
             return;
         }
     }
@@ -60,8 +63,8 @@ namespace Server
         {
             _sequenceNumber = 0;
             _clients = new Dictionary<string, ClientMetadata>();
-            action = new ServerAction();
             ReadConfigurationFile(filename);
+            action = new ServerAction(_username);
         }
 
         private void ReadConfigurationFile(string filename)
@@ -233,14 +236,15 @@ namespace Server
         }
 
         int ILookupService.NextSequenceNumber()
-        {           
+        {
+            _sequenceNumber++; //increment sequence number and then try to acquire.
             callOtherServers();  //to test client functionality, comment this line to generate sequence number from one server.
-            Log.Show(_username, "Sequence number retrieved. Next sequence number is: " + (_sequenceNumber + 1));
-            return _sequenceNumber++;
+            Log.Show(_username, "Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
+            return _sequenceNumber;
 
         }
 
-        private void callOtherServers()  // still to do!! committing just to save the progress.
+        private void callOtherServers()
         {
              IConsistencyService[] server = new IConsistencyService[_servers.Count];
             for (int i = 0; i < _servers.Count; i++)
@@ -248,12 +252,15 @@ namespace Server
                 server[i] = getOtherServers(_servers[i]);
             }
 
+            //Write  generated sequence number to ourself.
+           bool status = action.WriteSequenceNumber(_sequenceNumber);
+            Log.Show(_username, "Generated sequence number write to ourself returned: " + status);
+
             callback returnedValue1 = new callback();
-		    callback.RemoteAsyncDelegate RemoteDel1 = new callback.RemoteAsyncDelegate(()=> server[0].WriteSequenceNumber(_sequenceNumber) );
+		   callback.RemoteAsyncDelegate RemoteDel1 = new callback.RemoteAsyncDelegate(()=> server[0].WriteSequenceNumber(_sequenceNumber) );
 		    AsyncCallback RemoteCallback1 = new AsyncCallback(returnedValue1.OurRemoteAsyncCallBack);
             IAsyncResult RemAr1 = RemoteDel1.BeginInvoke(RemoteCallback1, null);
 
-            Log.Show(_username, "\r\n**SUCCESS**: Result of the remote AsyncCallBack1: " + returnedValue1._status);
 
             callback returnedValue2 = new callback();
             callback.RemoteAsyncDelegate RemoteDel2 = new callback.RemoteAsyncDelegate(() => server[1].WriteSequenceNumber(_sequenceNumber));
@@ -261,9 +268,36 @@ namespace Server
             IAsyncResult RemAr2 = RemoteDel2.BeginInvoke(RemoteCallback2, null);
 
 
-            Console.WriteLine("\r\n**SUCCESS**: Result of the remote AsyncCallBack2: " + returnedValue2._status);
+            Log.Show(_username, " Waiting for atleast one Server to return");
+            
+            returnedValue1.waiter.WaitOne();
 
+           // Log.Show(_username, " One of the Servers returned " + returnedValue1._status);
 
+            if (returnedValue1._status == false)
+            {
+                Log.Show(_username, " One of the Servers failed to get the sequence number. "+returnedValue1._status);
+                Log.Show(_username, " Waiting for other server");
+                returnedValue2.waiter.WaitOne();
+
+                if (returnedValue2._status == false)
+                {
+                    Log.Show(_username, " Other server also failed to get the sequence number ");
+                    _sequenceNumber++;
+                    callOtherServers(); // try until you get a sequence number.
+                }
+
+                else
+                {
+                    Log.Show(_username, " Other server successfully got the sequence number. "+ returnedValue2._status);
+                }
+
+            }
+
+            else
+            {
+                Log.Show(_username, " One of the servers successfully got the sequence number. Return!!");
+            }
         }
 
 
