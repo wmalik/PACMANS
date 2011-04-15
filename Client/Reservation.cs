@@ -12,7 +12,6 @@ namespace Client
         public Reservation()
         {
             this.UserStubs = new Dictionary<string, IClient>();
-            this.Slots = new Dictionary<int, ReservationSlot>();
         }
 
         public int ReservationID
@@ -47,7 +46,7 @@ namespace Client
             set;
         }
 
-        public Dictionary<int, ReservationSlot> Slots
+        public List<ReservationSlot> Slots
         {
             get;
             set;

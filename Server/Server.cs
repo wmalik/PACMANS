@@ -15,6 +15,7 @@ using PuppetMaster;
 using System.Collections;
 using Server.Services;
 using System.Threading;
+using System.Runtime.Remoting.Messaging;
 
 namespace Server
 {
@@ -23,6 +24,21 @@ namespace Server
         void Init();
     }
 
+    class callback
+    {
+        public delegate bool RemoteAsyncDelegate();
+        public bool _status;
+        public ManualResetEvent waiter = new ManualResetEvent(false);
+
+        // This is the call that the AsyncCallBack delegate will reference.
+        public void OurRemoteAsyncCallBack(IAsyncResult ar)
+        {
+            RemoteAsyncDelegate del = (RemoteAsyncDelegate)((AsyncResult)ar).AsyncDelegate;
+            _status = del.EndInvoke(ar);
+            waiter.Set();
+            return;
+        }
+    }
 
     //TODO: maybe it's better to implement lookup service in a separate manager
     //it is here just for the purpose of testing
@@ -47,8 +63,8 @@ namespace Server
         {
             _sequenceNumber = 0;
             _clients = new Dictionary<string, ClientMetadata>();
-            action = new ServerAction();
             ReadConfigurationFile(filename);
+            action = new ServerAction(_username);
         }
 
         private void ReadConfigurationFile(string filename)
@@ -72,9 +88,11 @@ namespace Server
             for (int i = 0; i < 2; i++)
             {
                 XmlNodeList server_ipportlist = serverslist[i].ChildNodes;
-                string ip_addr = server_ipportlist[0].InnerText;
-                int port = Convert.ToInt32(server_ipportlist[1].InnerText);
+                string id = server_ipportlist[0].InnerText;
+                string ip_addr = server_ipportlist[1].InnerText;
+                int port = Convert.ToInt32(server_ipportlist[2].InnerText);
                 ServerMetadata sm = new ServerMetadata();
+                sm.Username = id;
                 sm.IP_Addr = ip_addr;
                 sm.Port = port;
                 _servers.Add(sm);
@@ -219,13 +237,14 @@ namespace Server
 
         int ILookupService.NextSequenceNumber()
         {
-            Log.Show(_username, "Sequence number retrieved. Next sequence number is: " + (_sequenceNumber+1));           
+            _sequenceNumber++; //increment sequence number and then try to acquire.
             callOtherServers();  //to test client functionality, comment this line to generate sequence number from one server.
-            return _sequenceNumber++;
+            Log.Show(_username, "Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
+            return _sequenceNumber;
 
         }
 
-        private void callOtherServers() 
+        private void callOtherServers()
         {
              IConsistencyService[] server = new IConsistencyService[_servers.Count];
             for (int i = 0; i < _servers.Count; i++)
@@ -233,19 +252,59 @@ namespace Server
                 server[i] = getOtherServers(_servers[i]);
             }
 
-           // This isnt a good idea, needs to be changed. Jusr experimenting.
-            Thread t1 = new Thread(() => server[0].WriteSequenceNumber(++_sequenceNumber));
-            t1.Start();
-            Thread t2 = new Thread(() => server[1].WriteSequenceNumber(_sequenceNumber));
-            t2.Start();
+            //Write  generated sequence number to ourself.
+           bool status = action.WriteSequenceNumber(_sequenceNumber);
+            Log.Show(_username, "Generated sequence number write to ourself returned: " + status);
 
+            callback returnedValue1 = new callback();
+		   callback.RemoteAsyncDelegate RemoteDel1 = new callback.RemoteAsyncDelegate(()=> server[0].WriteSequenceNumber(_sequenceNumber) );
+		    AsyncCallback RemoteCallback1 = new AsyncCallback(returnedValue1.OurRemoteAsyncCallBack);
+            IAsyncResult RemAr1 = RemoteDel1.BeginInvoke(RemoteCallback1, null);
+
+
+            callback returnedValue2 = new callback();
+            callback.RemoteAsyncDelegate RemoteDel2 = new callback.RemoteAsyncDelegate(() => server[1].WriteSequenceNumber(_sequenceNumber));
+            AsyncCallback RemoteCallback2 = new AsyncCallback(returnedValue2.OurRemoteAsyncCallBack);
+            IAsyncResult RemAr2 = RemoteDel2.BeginInvoke(RemoteCallback2, null);
+
+
+            Log.Show(_username, " Waiting for atleast one Server to return");
+            
+            returnedValue1.waiter.WaitOne();
+
+           // Log.Show(_username, " One of the Servers returned " + returnedValue1._status);
+
+            if (returnedValue1._status == false)
+            {
+                Log.Show(_username, " One of the Servers failed to get the sequence number. "+returnedValue1._status);
+                Log.Show(_username, " Waiting for other server");
+                returnedValue2.waiter.WaitOne();
+
+                if (returnedValue2._status == false)
+                {
+                    Log.Show(_username, " Other server also failed to get the sequence number ");
+                    _sequenceNumber++;
+                    callOtherServers(); // try until you get a sequence number.
+                }
+
+                else
+                {
+                    Log.Show(_username, " Other server successfully got the sequence number. "+ returnedValue2._status);
+                }
+
+            }
+
+            else
+            {
+                Log.Show(_username, " One of the servers successfully got the sequence number. Return!!");
+            }
         }
 
 
         private IConsistencyService getOtherServers(ServerMetadata servers)
         {
                 ServerMetadata chosenServer = servers;
-                String connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + _username + "/" + Common.Constants.CONSISTENCY_SERVICE_NAME;
+                String connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + servers.Username + "/" + Common.Constants.CONSISTENCY_SERVICE_NAME;
                 Log.Show(_username, "Trying to find server: " + connectionString);
 
                 IConsistencyService server = (IConsistencyService)Activator.GetObject(

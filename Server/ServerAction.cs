@@ -14,15 +14,18 @@ using Common.Services;
 using PuppetMaster;
 using System.Collections;
 using Server.Services;
+using System.Threading;
 
 namespace Server
 {
     public class ServerAction : MarshalByRefObject, IConsistencyService
     {
         private int _lastSeenSequenceNumber;
+        private string _username;
 
-        public ServerAction()
+        public ServerAction(string _username)
         {
+            this._username = _username;
             _lastSeenSequenceNumber = 0;
         }
 
@@ -42,20 +45,29 @@ namespace Server
 
         public bool WriteSequenceNumber(int seqNum)
         {
-            Console.WriteLine("WriteSeqnum successfully invoked,{0}", seqNum);
-            if (seqNum > _lastSeenSequenceNumber)
+            Monitor.Enter(this);
+
+            try
             {
-                _lastSeenSequenceNumber = seqNum;
+                Log.Show(_username, "WriteSeqnum successfully invoked for sequence number: " + seqNum);
+                if (seqNum > _lastSeenSequenceNumber)
+                {
+                    _lastSeenSequenceNumber = seqNum;
 
-                return true;
+                    return true;
+                }
+
+                else
+                {
+
+                    return false;
+
+                }
             }
-
-            else
+            finally
             {
-                //Yet to handle.
+                Monitor.Exit(this);
             }
-
-            return false;
         }
 
 
