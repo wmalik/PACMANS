@@ -17,6 +17,8 @@ namespace Common.Util
     {
         public static string GetIPAddress()
         {
+            //return "127.0.0.1";
+            
             IPHostEntry host;
             string localIP = "?";
             host = Dns.GetHostEntry(Dns.GetHostName());
@@ -37,8 +39,6 @@ namespace Common.Util
             ServerMetadata chosenServer = servers[0];
 
             String connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + chosenServer.Username + "/" + Common.Constants.LOOKUP_SERVICE_NAME;
-
-            Log.Show("bla","Trying to lookup service: " + connectionString);
 
             ILookupService server = (ILookupService)Activator.GetObject(
                 typeof(ILookupService),
@@ -74,7 +74,7 @@ namespace Common.Util
 
         public static void WriteToFile(StreamWriter logfile, string username, string msg)
         {
-            string logmsg ="[" + DateTime.Now.ToString("T") + "][" + username + "] " + msg;
+            string logmsg = "[" + DateTime.Now.ToString("T") + "][" + username + "] " + msg;
             logfile.WriteLine(logmsg);
             logfile.Flush();
 

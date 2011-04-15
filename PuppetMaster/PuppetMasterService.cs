@@ -57,6 +57,12 @@ namespace PuppetMaster
             return this.serverFacadeList;
         }
 
+
+        public void show(string msg)
+        {
+            Gui.show(msg);
+        }
+
         private IClientFacade connectToClientFacadeService(ClientMetadata cm)
         {
             
@@ -74,6 +80,7 @@ namespace PuppetMaster
             IClientFacade facadeService = (IClientFacade)Activator.GetObject(
                 typeof(IClientFacade),
                 connectionString);
+
 
             return facadeService;
              
@@ -121,8 +128,6 @@ namespace PuppetMaster
             //update the Clients tree in PuppetGUI
             Gui.updateClientsTree(cm, null);
 
-           // MessageBox.Show(username+" has joined!");
-
             return true;
         }
 
@@ -138,7 +143,7 @@ namespace PuppetMaster
             IServerFacade isf = connectToServerFacadeService(sm);
             serverFacadeList.Add(username, isf);
 
-            //TODO: update the Servers tree in PuppetGUI
+
             Gui.updateServersTree(sm, null);
 
             return true;

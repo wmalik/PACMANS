@@ -1,5 +1,14 @@
-disconnect Client3
-disconnect Client1
-connect Client1
-reservation WasifsParty;Client1,Client2;1,2;
+connect central-1 127.0.0.1:50001
+connect central-2 127.0.0.1:50002
+connect central-3 127.0.0.1:50003
+connect user2 127.0.0.1:9102
+connect user3 127.0.0.1:9103
+connect user4 127.0.0.1:9104
+connect user7 127.0.0.1:9107
+reservation {GroupMeeting; user2, user3, user4; 13, 25 }
+readCalendar user2 127.0.0.1:9102
+disconnect user3 127.0.0.1:9103
+disconnect central-1 127.0.0.1:50001
+connect wasifmalik 127.0.0.1:6677
+
 

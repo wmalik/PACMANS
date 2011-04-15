@@ -60,6 +60,8 @@ namespace Server
         private string _puppetIP;
         private int _puppetPort;
         private List<ServerMetadata> _servers;
+        private string _configFile;
+        private string _path;
         ServerAction action;
 
         //TODO: Temporary vars, move to some separate manager later
@@ -76,6 +78,20 @@ namespace Server
             ReadConfigurationFile(filename);
         }
 
+        public Server(string username, int port, string path, string configFile)
+        {
+            _username = username;
+            _port = port;
+            _path = path;
+            _configFile = _path + configFile;
+            _sequenceNumber = 0;
+            _clients = new Dictionary<string, ClientMetadata>();
+            ReadConfigurationFile();
+            action = new ServerAction(_username);
+            
+        }
+
+        //Deprecated
         private void ReadConfigurationFile(string filename)
         {
             string current_dir = System.IO.Directory.GetCurrentDirectory();
@@ -105,6 +121,45 @@ namespace Server
                 sm.IP_Addr = ip_addr;
                 sm.Port = port;
                 _servers.Add(sm);
+            }
+        }
+
+
+        private void ReadConfigurationFile()
+        {
+            string current_dir = System.IO.Directory.GetCurrentDirectory();
+            XmlDocument xmlDoc = new XmlDocument(); //* create an xml document object.
+            xmlDoc.Load(_configFile); //* load the XML document from the specified file.
+
+            XmlNodeList puppetmasteriplist = xmlDoc.GetElementsByTagName("PuppetMasterIP");
+            XmlNodeList puppetmasterportlist = xmlDoc.GetElementsByTagName("PuppetMasterPort");
+            XmlNodeList serverslist = xmlDoc.GetElementsByTagName("Server");
+
+            _puppetIP = puppetmasteriplist[0].InnerText;
+            _puppetPort = Convert.ToInt32(puppetmasterportlist[0].InnerText);
+            _servers = new List<ServerMetadata>();
+
+            
+
+            for (int i = 0; i < 3; i++)
+            {
+                
+                XmlNodeList server_ipportlist = serverslist[i].ChildNodes;
+                string id = server_ipportlist[0].InnerText;
+                if (_username.Equals(id))
+                {
+                    continue;
+                }
+                else
+                {
+                    string ip_addr = server_ipportlist[1].InnerText;
+                    int port = Convert.ToInt32(server_ipportlist[2].InnerText);
+                    ServerMetadata sm = new ServerMetadata();
+                    sm.Username = id;
+                    sm.IP_Addr = ip_addr;
+                    sm.Port = port;
+                    _servers.Add(sm);
+                }
             }
         }
 
