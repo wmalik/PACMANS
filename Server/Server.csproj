@@ -59,6 +59,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IClient.cs" />
     <Compile Include="ServerAction.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="Program.cs" />
@@ -98,6 +99,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="conf\Server.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="conf\Server1.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

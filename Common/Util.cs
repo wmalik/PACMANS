@@ -17,6 +17,8 @@ namespace Common.Util
     {
         public static string GetIPAddress()
         {
+            //return "127.0.0.1";
+            
             IPHostEntry host;
             string localIP = "?";
             host = Dns.GetHostEntry(Dns.GetHostName());
@@ -72,7 +74,7 @@ namespace Common.Util
 
         public static void WriteToFile(StreamWriter logfile, string username, string msg)
         {
-            string logmsg ="[" + DateTime.Now.ToString("T") + "][" + username + "] " + msg;
+            string logmsg = "[" + DateTime.Now.ToString("T") + "][" + username + "] " + msg;
             logfile.WriteLine(logmsg);
             logfile.Flush();
 

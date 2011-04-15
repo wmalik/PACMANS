@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClientCreator.cs" />
     <Compile Include="Reservation.cs" />
     <Compile Include="Services.cs" />
     <Compile Include="SlotManager.cs" />
@@ -86,6 +87,10 @@
     <Content Include="conf\Client5.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>
+    </Content>
+    <Content Include="conf\Client.xml">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="log\TextFile1.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
