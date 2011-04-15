@@ -51,7 +51,7 @@ namespace PuppetMaster
           
         }
 
-        private void show(string msg)
+        public void show(string msg)
         {
             this.consoleBox.AppendText("\r\n"+"(*) "+msg);
         }
