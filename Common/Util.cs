@@ -38,8 +38,6 @@ namespace Common.Util
 
             String connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + chosenServer.Username + "/" + Common.Constants.LOOKUP_SERVICE_NAME;
 
-            Log.Show("bla","Trying to lookup service: " + connectionString);
-
             ILookupService server = (ILookupService)Activator.GetObject(
                 typeof(ILookupService),
                 connectionString);

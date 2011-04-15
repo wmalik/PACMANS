@@ -47,14 +47,27 @@ namespace Client
             //Create and populate local reservation
             Reservation res = CreateReservation(req, _userName, Helper.GetIPAddress(), _port);
 
-            foreach (int slot in req.Slots)
-            {
-                ReservationSlot rs = new ReservationSlot(req.ReservationID, slot, ReservationSlotState.INITIATED);
-                res.Slots[slot] = rs;
-            }
+            //Mark slots initial states
+            List<ReservationSlot> reservationSlots = CreateReservationSlots(req);
 
-            //Add reservation to map of active reservations
-            _activeReservations[res.ReservationID] = res;
+            //Update reservation request, removing aborted slots
+            foreach (ReservationSlot slot in new List<ReservationSlot>(reservationSlots))
+            {
+                if (slot.State == ReservationSlotState.ABORTED) {
+                    Log.Show(_userName, "Slot " + slot.SlotID + " not available on initiator. Removing from reservation.");
+                    //removing slot of original request, since it will be passed to participants
+                    reservationSlots.Remove(slot);
+                    req.Slots.Remove(slot.SlotID);
+                }
+            }
+            res.Slots = reservationSlots;
+
+            //If no slots are available, cancel reservation
+            if (req.Slots.Count == 0)
+            {
+                Log.Show(_userName, "No available slots on initiator, aborting reservation.");
+                return false;
+            }
 
             //Retrieve user's metadata
             List<ClientMetadata> onlineUsers = new List<ClientMetadata>();
@@ -62,7 +75,7 @@ namespace Client
             for(int i=0; i<req.Users.Count; i++){
                 try {
                     string userID = req.Users[i];
-                    ClientMetadata participantInfo = Helper.GetRandomServer(_servers).Lookup(userID);
+                    ClientMetadata participantInfo = server.Lookup(userID);
                 } catch (SocketException) {
                     //server has failed
                     //update server reference and decrease loop counter
@@ -73,16 +86,83 @@ namespace Client
 
             if (onlineUsers.Count != req.Users.Count)
             {
-                //Not all users are online, what to do!?
+                //TODO: Monitor offline nodes
+                Log.Show(_userName, "FATAL: Not all participants are online, aborting reservation for now.");
+                return false;
             }
 
             foreach(ClientMetadata clientMd in onlineUsers){
 
+                String connectionString = "tcp://" + clientMd.IP_Addr + ":" + clientMd.Port + "/" + clientMd.Username + "/" + Common.Constants.BOOKING_SERVICE_NAME;
 
+
+                try{
+                    IBookingService client = (IBookingService)Activator.GetObject(
+                                                                            typeof(ILookupService),
+                                                                            connectionString);
+
+                    //TODO: make this asynchronous/parallel
+                    List<ReservationSlot> participantReply = client.InitReservation(req, res.InitiatorID, res.InitiatorIP, res.InitiatorPort);
+                    UpdateReservation(participantReply);
+                } catch (SocketException){
+                    Log.Show(_userName, "ERROR: Not all participants are online, aborting reservation for now.");
+                    //TODO: do something
+                }
             }
+            
+            //After feedback was received from all participants, send abort
+            //foreach(KeyValuePair<int,ReservationSlot> rSlot in res.Slots){
+            //}
 
+            //Add reservation to map of active reservations
+            _activeReservations[res.ReservationID] = res;
 
             return false;
+        }
+
+        private List<ReservationSlot> CreateReservationSlots(ReservationRequest req)
+        {
+            //Verify calendar slots and create reservation states
+            List<ReservationSlot> reservationSlots = new List<ReservationSlot>();
+
+            foreach (int slot in req.Slots)
+            {
+
+                ReservationSlotState state = ReservationSlotState.INITIATED;
+
+                CalendarSlot calendarSlot;
+                if (_calendar.TryGetValue(slot, out calendarSlot))
+                {
+                    if (calendarSlot.State == CalendarSlotState.ASSIGNED)
+                    {
+                        state = ReservationSlotState.ABORTED;
+                    }
+                }
+
+
+                ReservationSlot rs = new ReservationSlot(req.ReservationID, slot, state);
+                reservationSlots.Add(rs);
+            }
+            return reservationSlots;
+        }
+
+        private void UpdateReservation(List<ReservationSlot> participantReply)
+        {
+            foreach (ReservationSlot rSlot in participantReply)
+            {
+                if (rSlot.State == ReservationSlotState.ABORTED)
+                {
+                    Reservation reservation;
+                    if (_activeReservations.TryGetValue(rSlot.ReservationID, out reservation))
+                    {
+                        reservation.Slots[rSlot.SlotID].State = ReservationSlotState.ABORTED;
+                    }
+                    else
+                    {
+                        Log.Show(_userName, "WARN: Could not find reservation " + rSlot.ReservationID);
+                    } //else
+                } //if
+            } //foreach
         }
 
         private int RetrieveSequenceNumber()
@@ -130,7 +210,7 @@ namespace Client
             throw new NotImplementedException();
         }
 
-        bool IBookingService.BookReply(int resID, int slotID, string userID)
+        void IBookingService.BookReply(int resID, int slotID, string userID, bool ack)
         {
             throw new NotImplementedException();
         }
@@ -140,7 +220,7 @@ namespace Client
             throw new NotImplementedException();
         }
 
-        bool IBookingService.PreCommitReply(int resId, int slotID, string userID)
+        void IBookingService.PreCommitReply(int resId, int slotID, string userID, bool ack)
         {
             throw new NotImplementedException();
         }
@@ -150,7 +230,7 @@ namespace Client
             throw new NotImplementedException();
         }
 
-        bool IBookingService.DoCommitReply(int resId, int slotID, string userID)
+        void IBookingService.DoCommitReply(int resId, int slotID, string userID, bool ack)
         {
             throw new NotImplementedException();
         }
@@ -159,7 +239,6 @@ namespace Client
         {
             throw new NotImplementedException();
         }
-
 
     }
 }

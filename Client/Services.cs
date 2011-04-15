@@ -20,15 +20,15 @@ namespace Client.Services
 
         void BookSlot(int resID, int slotID);
 
-        bool BookReply(int resID, int slotID, string userID);
+        void BookReply(int resID, int slotID, string userID, bool ack);
 
         void PreCommit(int resId, int slotID);
 
-        bool PreCommitReply(int resId, int slotID, string userID);
+        void PreCommitReply(int resId, int slotID, string userID, bool ack);
 
         void DoCommit(int resId, int slotID);
 
-        bool DoCommitReply(int resId, int slotID, string userID);
+        void DoCommitReply(int resId, int slotID, string userID, bool ack);
 
         bool Abort(int resId, int slotID, string userID);
 
