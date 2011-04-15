@@ -13,12 +13,13 @@ namespace Server.Services
     interface IConsistencyService
     {
 
-//        bool WriteClientMetadata(ClientMetadata clientInfo);
+        bool WriteClientMetadata(ClientMetadata clientInfo);
 
- //       ClientMetadata ReadClientMetadata();
+        ClientMetadata ReadClientMetadata(string username);
 
         bool WriteSequenceNumber(int seqNum);
 
-        int ReadSequenceNumber();
+        void UnregisterUser(string username);
+
     }
 }
