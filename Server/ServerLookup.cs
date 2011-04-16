@@ -318,8 +318,8 @@ namespace Server
             }
 
             Log.Show(_username, "[RETRIEVED SEQ NUMBER] Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
-            if (pms != null)
-                pms.show(_username + " [RETRIEVED SEQ NUMBER] Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
+            //if (pms != null)
+            //    pms.show(_username + " [RETRIEVED SEQ NUMBER] Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
             return _sequenceNumber;
         }
 

@@ -240,10 +240,14 @@ namespace Client
                 
                 _isOnline = true;
                 StartServices();
-                //TODO:WASIF
-                //Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
-                int seqnum = Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
-                Log.Show(_username, "Sequence number acquired: " + seqnum);
+                Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
+
+                //ILookupService ils = Helper.GetRandomServer(_servers);
+                //Log.Show(_username, "%%%%%%%%%%% ils was acquired succesfully");
+                //int seqnum = ils.NextSequenceNumber();  //Testing purpose. To be removed later.
+                //Log.Show(_username, "%%%%%%%%%%% seqnum was acquired succesfully");
+                
+                /*Log.Show(_username, "Sequence number acquired: " + seqnum);
                 Log.Show(_username, "Client is connected.");
                 ClientMetadata cmd = Helper.GetRandomServer(_servers).Lookup(_username); //REMOVEME
                 //pms.show("");
@@ -257,7 +261,7 @@ namespace Client
                     //Helper.GetRandomServer(_servers).UnregisterUser(_username);
 
                 }
-                Helper.GetRandomServer(_servers).UnregisterUser(_username);
+                Helper.GetRandomServer(_servers).UnregisterUser(_username);*/
                 return true;
             }
 
@@ -271,7 +275,6 @@ namespace Client
             {
                 _isOnline = false;
                 StopServices();
-                //Helper.GetRandomServer(_servers).UnregisterUser(_username);
                 //Broadcast offline information to initiators of ongoing reservations
                 Log.Show(_username, "Client is disconnected.");
                 return true;

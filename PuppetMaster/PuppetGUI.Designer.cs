@@ -34,6 +34,14 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PuppetGUI));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.descBox = new System.Windows.Forms.TextBox();
+            this.usersBox = new System.Windows.Forms.TextBox();
+            this.slotsBox = new System.Windows.Forms.TextBox();
+            this.createRes = new System.Windows.Forms.Button();
+            this.label3 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label1 = new System.Windows.Forms.Label();
             this.loadEventsButton = new System.Windows.Forms.Button();
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.rightClickStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -44,14 +52,6 @@
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.consoleBox = new System.Windows.Forms.TextBox();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.createRes = new System.Windows.Forms.Button();
-            this.slotsBox = new System.Windows.Forms.TextBox();
-            this.usersBox = new System.Windows.Forms.TextBox();
-            this.descBox = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.SuspendLayout();
@@ -59,10 +59,10 @@
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
             this.splitContainer2.SuspendLayout();
+            this.groupBox1.SuspendLayout();
             this.rightClickStrip.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
-            this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
             // splitContainer1
@@ -103,6 +103,87 @@
             this.splitContainer2.Size = new System.Drawing.Size(784, 564);
             this.splitContainer2.SplitterDistance = 236;
             this.splitContainer2.TabIndex = 0;
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.descBox);
+            this.groupBox1.Controls.Add(this.usersBox);
+            this.groupBox1.Controls.Add(this.slotsBox);
+            this.groupBox1.Controls.Add(this.createRes);
+            this.groupBox1.Controls.Add(this.label3);
+            this.groupBox1.Controls.Add(this.label2);
+            this.groupBox1.Controls.Add(this.label1);
+            this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.groupBox1.Location = new System.Drawing.Point(0, 287);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(236, 194);
+            this.groupBox1.TabIndex = 0;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Create Reservation";
+            this.groupBox1.Enter += new System.EventHandler(this.groupBox1_Enter);
+            // 
+            // descBox
+            // 
+            this.descBox.Location = new System.Drawing.Point(72, 19);
+            this.descBox.Name = "descBox";
+            this.descBox.Size = new System.Drawing.Size(100, 20);
+            this.descBox.TabIndex = 3;
+            this.descBox.Text = "Birthday Party";
+            // 
+            // usersBox
+            // 
+            this.usersBox.Location = new System.Drawing.Point(72, 45);
+            this.usersBox.Name = "usersBox";
+            this.usersBox.Size = new System.Drawing.Size(100, 20);
+            this.usersBox.TabIndex = 3;
+            this.usersBox.Text = "Client5,Client2";
+            // 
+            // slotsBox
+            // 
+            this.slotsBox.Location = new System.Drawing.Point(72, 71);
+            this.slotsBox.Name = "slotsBox";
+            this.slotsBox.Size = new System.Drawing.Size(100, 20);
+            this.slotsBox.TabIndex = 3;
+            this.slotsBox.Text = "1,2,3";
+            // 
+            // createRes
+            // 
+            this.createRes.Location = new System.Drawing.Point(68, 98);
+            this.createRes.Name = "createRes";
+            this.createRes.Size = new System.Drawing.Size(100, 23);
+            this.createRes.TabIndex = 2;
+            this.createRes.Text = "Create";
+            this.createRes.UseVisualStyleBackColor = true;
+            this.createRes.Click += new System.EventHandler(this.createRes_Click);
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(27, 74);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(30, 13);
+            this.label3.TabIndex = 1;
+            this.label3.Text = "Slots";
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(27, 48);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(34, 13);
+            this.label2.TabIndex = 1;
+            this.label2.Text = "Users";
+            this.label2.Click += new System.EventHandler(this.label2_Click);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(6, 22);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(60, 13);
+            this.label1.TabIndex = 1;
+            this.label1.Text = "Description";
+            this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
             // loadEventsButton
             // 
@@ -146,27 +227,27 @@
             this.connectMenuItem,
             this.readCalMenuItem});
             this.rightClickStrip.Name = "rightClickStrip";
-            this.rightClickStrip.Size = new System.Drawing.Size(151, 70);
+            this.rightClickStrip.Size = new System.Drawing.Size(153, 92);
             this.rightClickStrip.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
             // 
             // disconnectMenuItem
             // 
             this.disconnectMenuItem.Name = "disconnectMenuItem";
-            this.disconnectMenuItem.Size = new System.Drawing.Size(150, 22);
+            this.disconnectMenuItem.Size = new System.Drawing.Size(152, 22);
             this.disconnectMenuItem.Text = "Disconnect";
             this.disconnectMenuItem.Click += new System.EventHandler(this.disconnectMenuItem_Click);
             // 
             // connectMenuItem
             // 
             this.connectMenuItem.Name = "connectMenuItem";
-            this.connectMenuItem.Size = new System.Drawing.Size(150, 22);
+            this.connectMenuItem.Size = new System.Drawing.Size(152, 22);
             this.connectMenuItem.Text = "Connect";
             this.connectMenuItem.Click += new System.EventHandler(this.connectMenuItem_Click);
             // 
             // readCalMenuItem
             // 
             this.readCalMenuItem.Name = "readCalMenuItem";
-            this.readCalMenuItem.Size = new System.Drawing.Size(150, 22);
+            this.readCalMenuItem.Size = new System.Drawing.Size(152, 22);
             this.readCalMenuItem.Text = "Read Calendar";
             this.readCalMenuItem.Click += new System.EventHandler(this.readCalMenuItem_Click);
             // 
@@ -218,87 +299,6 @@
             this.consoleBox.TabIndex = 0;
             this.consoleBox.TextChanged += new System.EventHandler(this.consoleBox_TextChanged);
             // 
-            // groupBox1
-            // 
-            this.groupBox1.Controls.Add(this.descBox);
-            this.groupBox1.Controls.Add(this.usersBox);
-            this.groupBox1.Controls.Add(this.slotsBox);
-            this.groupBox1.Controls.Add(this.createRes);
-            this.groupBox1.Controls.Add(this.label3);
-            this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Controls.Add(this.label1);
-            this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.groupBox1.Location = new System.Drawing.Point(0, 287);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(236, 194);
-            this.groupBox1.TabIndex = 0;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Create Reservation";
-            this.groupBox1.Enter += new System.EventHandler(this.groupBox1_Enter);
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(6, 22);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(60, 13);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "Description";
-            this.label1.Click += new System.EventHandler(this.label1_Click);
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(27, 48);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(34, 13);
-            this.label2.TabIndex = 1;
-            this.label2.Text = "Users";
-            this.label2.Click += new System.EventHandler(this.label2_Click);
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(27, 74);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(30, 13);
-            this.label3.TabIndex = 1;
-            this.label3.Text = "Slots";
-            // 
-            // createRes
-            // 
-            this.createRes.Location = new System.Drawing.Point(68, 98);
-            this.createRes.Name = "createRes";
-            this.createRes.Size = new System.Drawing.Size(100, 23);
-            this.createRes.TabIndex = 2;
-            this.createRes.Text = "Create";
-            this.createRes.UseVisualStyleBackColor = true;
-            this.createRes.Click += new System.EventHandler(this.createRes_Click);
-            // 
-            // slotsBox
-            // 
-            this.slotsBox.Location = new System.Drawing.Point(72, 71);
-            this.slotsBox.Name = "slotsBox";
-            this.slotsBox.Size = new System.Drawing.Size(100, 20);
-            this.slotsBox.TabIndex = 3;
-            this.slotsBox.Text = "1,2,3";
-            // 
-            // usersBox
-            // 
-            this.usersBox.Location = new System.Drawing.Point(72, 45);
-            this.usersBox.Name = "usersBox";
-            this.usersBox.Size = new System.Drawing.Size(100, 20);
-            this.usersBox.TabIndex = 3;
-            this.usersBox.Text = "Client5,Client2";
-            // 
-            // descBox
-            // 
-            this.descBox.Location = new System.Drawing.Point(72, 19);
-            this.descBox.Name = "descBox";
-            this.descBox.Size = new System.Drawing.Size(100, 20);
-            this.descBox.TabIndex = 3;
-            this.descBox.Text = "Birthday Party";
-            // 
             // PuppetGUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -319,12 +319,12 @@
             this.splitContainer2.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
             this.splitContainer2.ResumeLayout(false);
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             this.rightClickStrip.ResumeLayout(false);
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
             this.tabPage1.PerformLayout();
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
 
         }

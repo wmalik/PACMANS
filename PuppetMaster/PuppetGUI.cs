@@ -226,7 +226,6 @@ namespace PuppetMaster
                 ServerMetadata sm = (ServerMetadata)pms.getServersList()[username];
                 IServerFacade isf = (IServerFacade)pms.getServerFacadeList()[username];
                 isf.Disconnect(); /*commented because Server Facade is not implemented yet*/
-                show("TODO: Server Facade to be implemented");
                 //show(username + " has been disconnected");
                 treeView1.SelectedNode.ImageIndex = 1;
                 treeView1.SelectedNode.SelectedImageIndex = 1;
@@ -406,7 +405,7 @@ namespace PuppetMaster
                             icf.Connect();
                             changeIconToConnected(username, null);
                         }
-                        else //means the client process needs to be started
+                        else //means a new process needs to be started
                         {
 
                             if (username.StartsWith("central"))
@@ -519,6 +518,8 @@ namespace PuppetMaster
         {
 
         }
+
+        
 
 
     }

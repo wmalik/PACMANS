@@ -1,14 +1,9 @@
 connect central-1 127.0.0.1:50001
 connect central-2 127.0.0.1:50002
 connect central-3 127.0.0.1:50003
-connect user2 127.0.0.1:9102
-connect user3 127.0.0.1:9103
-connect user4 127.0.0.1:9104
-connect user7 127.0.0.1:9107
-readCalendar user2 127.0.0.1:9102
 connect wasif 127.0.0.1:6677
 connect navaneeth 127.0.0.1:6678
 connect paulo 127.0.0.1:6679
 connect joao_garcia 127.0.0.1:6680
-
+readCalendar paulo 127.0.0.1:9102
 

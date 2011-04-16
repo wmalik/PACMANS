@@ -42,6 +42,7 @@ namespace Common.Util
             ILookupService server = null;
             String connectionString="";
             ServerMetadata chosenServer = servers[0]; //this line is to make C# happy 
+
             while (server == null)
             {
                 int server_num = new Random().Next(0, 3);
