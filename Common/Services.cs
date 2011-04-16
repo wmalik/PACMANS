@@ -18,7 +18,7 @@ namespace Common.Services
 
         bool Disconnect();
 
-        Dictionary<int, CalendarSlot> ReadCalendar();
+        List<CalendarSlot> ReadCalendar();
 
         bool CreateReservation(ReservationRequest reservation);
     }

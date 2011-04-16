@@ -248,7 +248,7 @@ namespace PuppetMaster
             {
                 ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
                 IClientFacade fs = (IClientFacade)pms.getClientFacadeList()[username];
-                Dictionary<int, CalendarSlot> calendar = fs.ReadCalendar();
+                //Dictionary<int, CalendarSlot> calendar = fs.ReadCalendar();
                 show("Calendar for "+username + " has been retrieved");
                 show("TODO: show the calendar");
             }
@@ -345,7 +345,7 @@ namespace PuppetMaster
                        case "readCalendar":
                           username = line.Split(' ')[1];
                           icf = (IClientFacade)pms.getClientFacadeList()[username];
-                          clientCalendar = icf.ReadCalendar();
+                          //clientCalendar = icf.ReadCalendar();
                           break;
                        case "reservation":
                           //reservation Description;userlist;slotlist;

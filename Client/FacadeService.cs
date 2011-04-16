@@ -30,7 +30,7 @@ namespace Client
         }
 
 
-        public Dictionary<int, CalendarSlot> ReadCalendar()
+        public List<CalendarSlot> ReadCalendar()
         {
             //get the calendar from client object and return
             return null;

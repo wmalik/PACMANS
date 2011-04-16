@@ -11,7 +11,9 @@ namespace Client
 
         public Reservation()
         {
-            this.UserStubs = new Dictionary<string, IClient>();
+            this.ClientStubs = new List<IBookingService>();
+            this.Replied = new List<string>();
+            this.Aborted = false;
         }
 
         public int ReservationID
@@ -21,6 +23,18 @@ namespace Client
         }
 
         public string InitiatorID
+        {
+            get;
+            set;
+        }
+
+        public IBookingService InitiatorStub
+        {
+            get;
+            set;
+        }
+
+        public bool Aborted
         {
             get;
             set;
@@ -52,7 +66,7 @@ namespace Client
             set;
         }
 
-        public Dictionary<string, IClient> UserStubs
+        public List<IBookingService> ClientStubs
         {
             get;
             set;
@@ -64,16 +78,28 @@ namespace Client
             set;
         }
 
+        public List<string> Replied
+        {
+            get;
+            set;
+        }
+
+        public int CurrentSlot
+        {
+            get;
+            set;
+        }
 
     }
 
+    [Serializable]
     public class ReservationSlot
     {
 
         public ReservationSlot(int reservationID, int slotID, ReservationSlotState state)
         {
             this.ReservationID = reservationID;
-            this.SlotID = SlotID;
+            this.SlotID = slotID;
             this.State = state;
         }
 
@@ -95,10 +121,17 @@ namespace Client
             set;
         }
 
+        public override string ToString()
+        {
+            return "Slot: " + SlotID + ". State: " + State;
+        }
+
+
     }
 
+    [Serializable]
     public enum ReservationSlotState
     {
-        INITIATED, TENTATIVELY_BOOKED, PRE_COMMITTED, COMMITTED, ABORTED
+        INITIATED, TENTATIVELY_BOOKED, COMMITTED, ABORTED
     }
 }

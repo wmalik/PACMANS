@@ -21,7 +21,7 @@ namespace Client
             IClient client2 = new Client("conf/Client2.xml");
             Thread t2 = new Thread(client2.Init);
             t2.Start();
-            
+
             Thread.Sleep(1000);
 
             IClient client3 = new Client("conf/Client3.xml");
@@ -39,7 +39,6 @@ namespace Client
             IClient client5 = new Client("conf/Client5.xml");
             Thread t5 = new Thread(client5.Init);
             t5.Start();
-
         }
     }
 }

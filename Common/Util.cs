@@ -65,9 +65,19 @@ namespace Common.Util
     public static class Log
     {
 
+        static bool debug = false;
+
         public static void Show(string username, string msg)
         {
             Console.WriteLine("[" + DateTime.Now.ToString("T") + "][" + username + "] " + msg);
+        }
+
+        public static void Debug(string username, string msg)
+        {
+            if (debug)
+            {
+                Console.WriteLine("[" + DateTime.Now.ToString("T") + "][" + username + "] " + msg);
+            }
         }
 
         public static void WriteToFile(StreamWriter logfile, string username, string msg)
