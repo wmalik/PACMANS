@@ -42,82 +42,83 @@ namespace Client
         public bool StartReservation(ReservationRequest req)
         {
             //Updates request with sequence number
-            req.ReservationID = RetrieveSequenceNumber();
+                 req.ReservationID = RetrieveSequenceNumber();
 
-            //Create and populate local reservation
-            Reservation res = CreateReservation(req, _userName, Helper.GetIPAddress(), _port);
+                 //Create and populate local reservation
+                 Reservation res = CreateReservation(req, _userName, Helper.GetIPAddress(), _port);
 
-            //Mark slots initial states
-            List<ReservationSlot> reservationSlots = CreateReservationSlots(req);
+                 //Mark slots initial states
+                 List<ReservationSlot> reservationSlots = CreateReservationSlots(req);
 
-            //Update reservation request, removing aborted slots
-            foreach (ReservationSlot slot in new List<ReservationSlot>(reservationSlots))
-            {
-                if (slot.State == ReservationSlotState.ABORTED) {
-                    Log.Show(_userName, "Slot " + slot.SlotID + " not available on initiator. Removing from reservation.");
-                    //removing slot of original request, since it will be passed to participants
-                    reservationSlots.Remove(slot);
-                    req.Slots.Remove(slot.SlotID);
-                }
-            }
-            res.Slots = reservationSlots;
+                 //Update reservation request, removing aborted slots
+                 foreach (ReservationSlot slot in new List<ReservationSlot>(reservationSlots))
+                 {
+                     if (slot.State == ReservationSlotState.ABORTED) {
+                         Log.Show(_userName, "Slot " + slot.SlotID + " not available on initiator. Removing from reservation.");
+                         //removing slot of original request, since it will be passed to participants
+                         reservationSlots.Remove(slot);
+                         req.Slots.Remove(slot.SlotID);
+                     }
+                 }
+                 res.Slots = reservationSlots;
 
-            //If no slots are available, cancel reservation
-            if (req.Slots.Count == 0)
-            {
-                Log.Show(_userName, "No available slots on initiator, aborting reservation.");
-                return false;
-            }
+                 //If no slots are available, cancel reservation
+                 if (req.Slots.Count == 0)
+                 {
+                     Log.Show(_userName, "No available slots on initiator, aborting reservation.");
+                     return false;
+                 }
 
-            //Retrieve user's metadata
-            List<ClientMetadata> onlineUsers = new List<ClientMetadata>();
-            ILookupService server = Helper.GetRandomServer(_servers);
-            for(int i=0; i<req.Users.Count; i++){
-                try {
-                    string userID = req.Users[i];
-                    ClientMetadata participantInfo = server.Lookup(userID);
-                } catch (SocketException) {
-                    //server has failed
-                    //update server reference and decrease loop counter
-                    server = Helper.GetRandomServer(_servers);
-                    i--;
-                }
-            }
+                 //Retrieve user's metadata
+                 List<ClientMetadata> onlineUsers = new List<ClientMetadata>();
+                 ILookupService server = Helper.GetRandomServer(_servers);
+                 for(int i=0; i<req.Users.Count; i++){
+                     try {
+                         string userID = req.Users[i];
+                         ClientMetadata participantInfo = server.Lookup(userID);
+                     } catch (SocketException) {
+                         //server has failed
+                         //update server reference and decrease loop counter
+                         server = Helper.GetRandomServer(_servers);
+                         i--;
+                     }
+                 }
 
-            if (onlineUsers.Count != req.Users.Count)
-            {
-                //TODO: Monitor offline nodes
-                Log.Show(_userName, "FATAL: Not all participants are online, aborting reservation for now.");
-                return false;
-            }
+                 if (onlineUsers.Count != req.Users.Count)
+                 {
+                     //TODO: Monitor offline nodes
+                     Log.Show(_userName, "FATAL: Not all participants are online, aborting reservation for now.");
+                     return false;
+                 }
 
-            foreach(ClientMetadata clientMd in onlineUsers){
+                 foreach(ClientMetadata clientMd in onlineUsers){
 
-                String connectionString = "tcp://" + clientMd.IP_Addr + ":" + clientMd.Port + "/" + clientMd.Username + "/" + Common.Constants.BOOKING_SERVICE_NAME;
+                     String connectionString = "tcp://" + clientMd.IP_Addr + ":" + clientMd.Port + "/" + clientMd.Username + "/" + Common.Constants.BOOKING_SERVICE_NAME;
 
 
-                try{
-                    IBookingService client = (IBookingService)Activator.GetObject(
-                                                                            typeof(ILookupService),
-                                                                            connectionString);
+                     try{
+                         IBookingService client = (IBookingService)Activator.GetObject(
+                                                                                 typeof(ILookupService),
+                                                                                 connectionString);
 
-                    //TODO: make this asynchronous/parallel
-                    List<ReservationSlot> participantReply = client.InitReservation(req, res.InitiatorID, res.InitiatorIP, res.InitiatorPort);
-                    UpdateReservation(participantReply);
-                } catch (SocketException){
-                    Log.Show(_userName, "ERROR: Not all participants are online, aborting reservation for now.");
-                    //TODO: do something
-                }
-            }
+                         //TODO: make this asynchronous/parallel
+                         List<ReservationSlot> participantReply = client.InitReservation(req, res.InitiatorID, res.InitiatorIP, res.InitiatorPort);
+                         UpdateReservation(participantReply);
+                     } catch (SocketException){
+                         Log.Show(_userName, "ERROR: Not all participants are online, aborting reservation for now.");
+                         //TODO: do something
+                     }
+                 }
             
-            //After feedback was received from all participants, send abort
-            //foreach(KeyValuePair<int,ReservationSlot> rSlot in res.Slots){
-            //}
+                 //After feedback was received from all participants, send abort
+                 //foreach(KeyValuePair<int,ReservationSlot> rSlot in res.Slots){
+                 //}
 
-            //Add reservation to map of active reservations
-            _activeReservations[res.ReservationID] = res;
-
+                 //Add reservation to map of active reservations
+                 _activeReservations[res.ReservationID] = res;
+                 
             return false;
+       
         }
 
         private List<ReservationSlot> CreateReservationSlots(ReservationRequest req)

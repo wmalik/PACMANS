@@ -140,6 +140,7 @@ namespace Client
         {
             RegisterChannel();
             StartFacade();
+            TestConnect();
             NotifyPuppetMaster();
         }
 
@@ -206,15 +207,19 @@ namespace Client
         /*
          * Implements IFacadeService
          */
-
         bool IClientFacade.Connect()
         {
-            pms.show(" ("+_username+")"+" I have received a Connect message");
+            return true;        
+        }
+
+        public bool TestConnect() //TODO: Just to test the server. Change it to IclientFacde.Connect() later.
+        {
+           // pms.show(" ("+_username+")"+" I have received a Connect message");
             if (!_isOnline)
             {
                 _isOnline = true;
                 StartServices();
-                //Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
+                Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
                 //Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
                 Log.Show(_username, "Client is connected.");
                 return true;

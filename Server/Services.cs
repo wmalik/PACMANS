@@ -19,7 +19,7 @@ namespace Server.Services
 
         bool WriteSequenceNumber(int seqNum);
 
-        void UnregisterUser(string username);
+        //void UnregisterUser(string username);
 
     }
 }

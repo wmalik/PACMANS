@@ -12,7 +12,7 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            string username = args[0];
+           /* string username = args[0];
             int port = Convert.ToInt32(args[1]);
             string path = Path.GetDirectoryName(Assembly.GetAssembly(typeof(Program)).CodeBase) + "\\";
             Console.WriteLine(username + " " + port);
@@ -21,8 +21,8 @@ namespace Server
             IServer server = new Server(username, port, path, "conf/Server.xml");
             Thread thread = new Thread(server.Init);
             thread.Start();
-
-            /*
+            */
+            
             IServer client1 = new Server("conf/Server1.xml");
             Thread t1 = new Thread(client1.Init);
             t1.Start();
@@ -42,7 +42,7 @@ namespace Server
 
             Thread.Sleep(1000);
 
-            */
+            
         }
     }
 }

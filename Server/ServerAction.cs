@@ -31,11 +31,6 @@ namespace Server
             _clients = new Dictionary<string, ClientMetadata>();
         }
 
-        public void StoreClientInfo(ClientMetadata client)
-        {
-            _clients[client.Username] = client;
-        }
-
 
         //private IConsistencyService getInvokingServer(ServerMetadata server, string username)
         //{
@@ -51,6 +46,7 @@ namespace Server
 
         //}
 
+        
         public bool WriteSequenceNumber(int seqNum)
         {
             Monitor.Enter(this);
@@ -76,7 +72,7 @@ namespace Server
 
 
 
-        public bool WriteClienMetaData(ClientMetadata clientInfo)
+        public bool WriteClientMetadata(ClientMetadata clientInfo)
         {
             Monitor.Enter(this);
             try
