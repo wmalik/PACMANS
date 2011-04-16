@@ -336,14 +336,14 @@ namespace PuppetMaster
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 //creating a new thread to read the event file
-                Thread fileReadingThread = new Thread(readFile);
+                Thread fileReadingThread = new Thread(readEventFileAndDispatchEvents);
                 fileReadingThread.Start();
             }
 
 
         }
 
-        private void readFile()
+        private void readEventFileAndDispatchEvents()
         {
             string line = string.Empty;
             System.IO.StreamReader sr = new
@@ -418,7 +418,14 @@ namespace PuppetMaster
                                 startInfo.FileName = path + "Server.exe";
                                 startInfo.Arguments = username + " " + port;
                                 Process.Start(startInfo);
-                                Thread.Sleep(500);
+
+                                //if server  is online, we move on to the next event. If not, we wait until the server is online
+                                IServerFacade isf = (IServerFacade)pms.getServerFacadeList()[username];
+                                while (isf == null)
+                                {
+                                    Thread.Sleep(500);
+                                    isf = (IServerFacade)pms.getServerFacadeList()[username];
+                                }
 
                             }
                             else //means its a client
@@ -429,7 +436,15 @@ namespace PuppetMaster
                                 startInfo.FileName = path + "Client.exe";
                                 startInfo.Arguments = username + " " + port;
                                 Process.Start(startInfo);
-                                Thread.Sleep(500);
+
+                                //if client  is online, we move on to the next event. If not, we wait until the client is online
+                                IClientFacade cf = (IClientFacade)pms.getClientFacadeList()[username];
+                                while (cf == null)
+                                {
+                                    Thread.Sleep(500);
+                                    cf = (IClientFacade)pms.getClientFacadeList()[username];
+                                }
+                                
 
                             }
                         }

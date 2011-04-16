@@ -62,6 +62,7 @@ namespace Server
 
         void ILookupService.RegisterUser(string username, string ip, int port)
         {
+
             ClientMetadata client = new ClientMetadata();
             client.IP_Addr = ip;
             client.Port = port;

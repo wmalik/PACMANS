@@ -19,7 +19,7 @@ namespace Common.Util
         public static string GetIPAddress()
         {
             //return "127.0.0.1";
-            
+
             IPHostEntry host;
             string localIP = "?";
             host = Dns.GetHostEntry(Dns.GetHostName());
@@ -39,24 +39,24 @@ namespace Common.Util
             //TODO current implementation just get first server from list
             //int server_num=0;
             //ServerMetadata chosenServer = servers[(server_num++)%3];
-            ServerMetadata chosenServer = servers[0];
-
-            String connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + chosenServer.Username + "/" + Common.Constants.LOOKUP_SERVICE_NAME;
-
-            ILookupService server = (ILookupService)Activator.GetObject(
-                typeof(ILookupService),
-                connectionString);
-
+            ILookupService server = null;
+            String connectionString="";
+            ServerMetadata chosenServer = servers[0]; //this line is to make C# happy 
             while (server == null)
             {
-                Console.WriteLine("Trying connection string:" + connectionString);
-                Thread.Sleep(500);
+                int server_num = new Random().Next(0, 2);
+
+                chosenServer= servers[server_num];
+
+                connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + chosenServer.Username + "/" + Common.Constants.LOOKUP_SERVICE_NAME;
+
                 server = (ILookupService)Activator.GetObject(
                     typeof(ILookupService),
                     connectionString);
-            }
+                Thread.Sleep(100);
 
-            Console.WriteLine("Returning the server with connection string:"+connectionString);
+            }
+            Console.WriteLine("Random server to contact is: "+chosenServer.Username);
             return server;
         }
 

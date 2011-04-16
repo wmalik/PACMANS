@@ -117,7 +117,7 @@ namespace Client
             _puppetPort = Convert.ToInt32(puppetmasterportlist[0].InnerText);
             _servers = new List<ServerMetadata>();
 
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 3; i++)
             {
                 //TODO: currently just reading first server
                 XmlNodeList server_ipportlist = serverslist[i].ChildNodes;
@@ -217,6 +217,8 @@ namespace Client
                 int seqnum = Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
                 Log.Show(_username, "Sequence number acquired: " + seqnum);
                 Log.Show(_username, "Client is connected.");
+                
+
                 return true;
             }
 
@@ -235,6 +237,7 @@ namespace Client
                 int seqnum = Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
                 Log.Show(_username, "Sequence number acquired: "+seqnum);
                 Log.Show(_username, "Client is connected.");
+                //Helper.GetRandomServer(_servers).Lookup(_username); //REMOVEME
                 return true;
             }
 
