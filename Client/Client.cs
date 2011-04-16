@@ -234,6 +234,9 @@ namespace Client
                 _isOnline = true;
                 StartServices();
                 Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
+
+                //Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
+
                 int seqnum = Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
                 Log.Show(_username, "Sequence number acquired: "+seqnum);
                 Log.Show(_username, "Client is connected.");
