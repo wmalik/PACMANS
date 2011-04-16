@@ -261,16 +261,17 @@ namespace PuppetMaster
 
             if (parent.Equals("Servers"))
             {
-                MessageBox.Show("Are you out of your mind?");
+                MessageBox.Show("You are messing with me rite?");
             }
 
             else if (parent.Equals("Clients"))
             {
                 ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
                 IClientFacade fs = (IClientFacade)pms.getClientFacadeList()[username];
-                //Dictionary<int, CalendarSlot> calendar = fs.ReadCalendar();
+                List<CalendarSlot> calendar = fs.ReadCalendar();
+                 
+                show("Calendar for "+username+": "+string.Join(",", calendar));
 
-                show("Calendar for " + username + " has been retrieved. TODO: call client facade");
             }
             else
             {
@@ -353,7 +354,7 @@ namespace PuppetMaster
                 string opcode = line.Split(' ')[0];
                 string username;
                 IClientFacade icf;
-                IDictionary<int, CalendarSlot> clientCalendar;
+                List<CalendarSlot> clientCalendar;
                 //TODO: fetch initiator from Users list
 
                 switch (opcode)
@@ -454,8 +455,8 @@ namespace PuppetMaster
                     case "readCalendar":
                         username = line.Split(' ')[1].Trim();
                         icf = (IClientFacade)pms.getClientFacadeList()[username];
-                        //clientCalendar = icf.ReadCalendar();
-                        show("Calendar has been read. TODO: call client facade");
+                        clientCalendar = icf.ReadCalendar();
+                        show("Calendar for " + username + ": " + string.Join(",", clientCalendar));
                         break;
 
                     case "reservation":
@@ -478,8 +479,7 @@ namespace PuppetMaster
                             Thread.Sleep(500);
                         }
                         icf.CreateReservation(rr);
-
-                        show("Reservation created - TODO: call client facade");
+                        Thread.Sleep(1000);
                         break;
                 }
 

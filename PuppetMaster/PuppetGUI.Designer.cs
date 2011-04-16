@@ -29,8 +29,8 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.TreeNode treeNode1 = new System.Windows.Forms.TreeNode("Servers", 2, 2);
-            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("Clients", 8, 8);
+            System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("Servers", 2, 2);
+            System.Windows.Forms.TreeNode treeNode4 = new System.Windows.Forms.TreeNode("Clients", 8, 8);
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PuppetGUI));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
@@ -128,7 +128,7 @@
             this.descBox.Name = "descBox";
             this.descBox.Size = new System.Drawing.Size(100, 20);
             this.descBox.TabIndex = 3;
-            this.descBox.Text = "Birthday Party";
+            this.descBox.Text = "Biggest_Event";
             // 
             // usersBox
             // 
@@ -136,7 +136,7 @@
             this.usersBox.Name = "usersBox";
             this.usersBox.Size = new System.Drawing.Size(100, 20);
             this.usersBox.TabIndex = 3;
-            this.usersBox.Text = "Client5,Client2";
+            this.usersBox.Text = "paulo,wasif";
             // 
             // slotsBox
             // 
@@ -204,17 +204,17 @@
             this.treeView1.ImageList = this.imageList1;
             this.treeView1.Location = new System.Drawing.Point(0, 0);
             this.treeView1.Name = "treeView1";
-            treeNode1.ImageIndex = 2;
-            treeNode1.Name = "Servers";
-            treeNode1.SelectedImageIndex = 2;
-            treeNode1.Text = "Servers";
-            treeNode2.ImageIndex = 8;
-            treeNode2.Name = "Clients";
-            treeNode2.SelectedImageIndex = 8;
-            treeNode2.Text = "Clients";
+            treeNode3.ImageIndex = 2;
+            treeNode3.Name = "Servers";
+            treeNode3.SelectedImageIndex = 2;
+            treeNode3.Text = "Servers";
+            treeNode4.ImageIndex = 8;
+            treeNode4.Name = "Clients";
+            treeNode4.SelectedImageIndex = 8;
+            treeNode4.Text = "Clients";
             this.treeView1.Nodes.AddRange(new System.Windows.Forms.TreeNode[] {
-            treeNode1,
-            treeNode2});
+            treeNode3,
+            treeNode4});
             this.treeView1.SelectedImageIndex = 0;
             this.treeView1.Size = new System.Drawing.Size(236, 287);
             this.treeView1.TabIndex = 0;
@@ -227,7 +227,7 @@
             this.connectMenuItem,
             this.readCalMenuItem});
             this.rightClickStrip.Name = "rightClickStrip";
-            this.rightClickStrip.Size = new System.Drawing.Size(153, 92);
+            this.rightClickStrip.Size = new System.Drawing.Size(151, 70);
             this.rightClickStrip.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
             // 
             // disconnectMenuItem

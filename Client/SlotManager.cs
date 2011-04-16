@@ -62,6 +62,7 @@ namespace Client
 
             //Create and populate local reservation
             Reservation res = CreateReservation(req, _userName, Helper.GetIPAddress(), _port);
+            
 
             //Mark slots initial states
             List<ReservationSlot> reservationSlots = CreateReservationSlots(req);
@@ -881,6 +882,7 @@ namespace Client
             thisRes.InitiatorID = initiatorID;
             thisRes.InitiatorIP = initiatorIP;
             thisRes.InitiatorPort = initiatorPort;
+            
 
             return thisRes;
         }

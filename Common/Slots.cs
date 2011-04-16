@@ -57,7 +57,7 @@ namespace Common.Slots
 
         public override string ToString()
         {
-            return "[" + SlotNum + "|" + State + "|reservation=" + (State == CalendarSlotState.ASSIGNED? ReservationID.ToString() : "X") + "]";
+            return "[" + SlotNum + "|" + State + "|reservation=" + (State == CalendarSlotState.ASSIGNED? ReservationID.ToString() : "X") +"]";
         }
 
     }

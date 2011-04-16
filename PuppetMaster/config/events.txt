@@ -6,4 +6,11 @@ connect navaneeth 127.0.0.1:6678
 connect paulo 127.0.0.1:6679
 connect joao_garcia 127.0.0.1:6680
 readCalendar paulo 127.0.0.1:9102
+reservation {GroupMeeting;paulo,wasif;1,2,3}
+readCalendar paulo 127.0.0.1:6679
+readCalendar wasif 127.0.0.1:6677
+disconnect joao_garcia 127.0.0.1:6680
+connect IronMan 127.0.0.1:9933
+connect Client_From_Hell 127.0.0.1:9934
+disconnect Client_From_Hell 127.0.0.1:9934
 
