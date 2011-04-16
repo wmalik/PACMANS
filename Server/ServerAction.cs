@@ -89,8 +89,7 @@ namespace Server
 
         public bool UnregisterUser(string username)
         {
-            _clients.Remove(username);
-            return true;
+            return _clients.Remove(username);
         }
     }
 

@@ -44,7 +44,7 @@ namespace Common.Util
             ServerMetadata chosenServer = servers[0]; //this line is to make C# happy 
             while (server == null)
             {
-                int server_num = new Random().Next(0, 2);
+                int server_num = new Random().Next(0, 3);
 
                 chosenServer= servers[server_num];
 

@@ -40,7 +40,8 @@ namespace Server
         ServerAction action;
         ServerFacade facade;
         ServerLookup lookup;
-      
+        PuppetMasterService pms;
+        String connectionString;
 
         public Server(string filename)
         {
@@ -48,7 +49,7 @@ namespace Server
             ReadConfigurationFile(filename);
             action = new ServerAction(this._username);
             lookup = new ServerLookup(this._username, action, _servers);
-            facade = new ServerFacade(this._username, action, lookup);
+            facade = new ServerFacade(this._username, _port, action, lookup);
         }
 
         public Server(string username, int port, string path, string configFile)
@@ -61,8 +62,8 @@ namespace Server
             ReadConfigurationFile();
             action = new ServerAction(_username);
             lookup = new ServerLookup(this._username, action, _servers);
-            facade = new ServerFacade(this._username, action, lookup);
-        
+            facade = new ServerFacade(this._username, _port,  action, lookup);
+
         }
 
         //Deprecated
@@ -82,7 +83,7 @@ namespace Server
             _port = Convert.ToInt32(portlist[0].InnerText);
             _puppetIP = puppetmasteriplist[0].InnerText;
             _puppetPort = Convert.ToInt32(puppetmasterportlist[0].InnerText);
-           
+
 
             for (int i = 0; i < 2; i++)
             {
@@ -110,11 +111,11 @@ namespace Server
             XmlNodeList serverslist = xmlDoc.GetElementsByTagName("Server");
 
             _puppetIP = puppetmasteriplist[0].InnerText;
-            _puppetPort = Convert.ToInt32(puppetmasterportlist[0].InnerText);   
+            _puppetPort = Convert.ToInt32(puppetmasterportlist[0].InnerText);
 
             for (int i = 0; i < 3; i++)
             {
-                
+
                 XmlNodeList server_ipportlist = serverslist[i].ChildNodes;
                 string id = server_ipportlist[0].InnerText;
                 if (_username.Equals(id))
@@ -141,10 +142,13 @@ namespace Server
         void IServer.Init()
         {
             RegisterChannel();
-            StartFacade(); 
+            StartFacade();
             StartLookupServices(); //Should be done by the Connect method
             StartConsistencyService();
+            initPMSObject();
+            lookup.setPMS(pms); 
             NotifyPuppetMaster();
+            
         }
 
         private void RegisterChannel()
@@ -167,28 +171,38 @@ namespace Server
         void StartConsistencyService()
         {
             string serviceName = _username + "/" + Common.Constants.CONSISTENCY_SERVICE_NAME;
-            Helper.StartService(_username, _port, serviceName, action , typeof(IConsistencyService));
+            Helper.StartService(_username, _port, serviceName, action, typeof(IConsistencyService));
         }
 
         void StartLookupServices()
         {
-  
+
             string serviceName = _username + "/" + Common.Constants.LOOKUP_SERVICE_NAME;
             Helper.StartService(_username, _port, serviceName, lookup, typeof(ILookupService));
+        }
+
+        private void initPMSObject()
+        {
+            connectionString = "tcp://" + _puppetIP + ":" + _puppetPort + "/" + Common.Constants.PUPPET_MASTER_SERVICE_NAME;
+
+            pms = (PuppetMasterService)Activator.GetObject(
+                typeof(PuppetMasterService),
+                connectionString);
+
         }
 
         private void NotifyPuppetMaster()
         {
 
-            String connectionString = "tcp://" + _puppetIP + ":" + _puppetPort + "/" + Common.Constants.PUPPET_MASTER_SERVICE_NAME;
+           /* String connectionString = "tcp://" + _puppetIP + ":" + _puppetPort + "/" + Common.Constants.PUPPET_MASTER_SERVICE_NAME;
 
-            PuppetMasterService pms = (PuppetMasterService)Activator.GetObject(
+            pms = (PuppetMasterService)Activator.GetObject(
                 typeof(PuppetMasterService),
                 connectionString);
-            
+            */
             try
             {
-                Log.Show(_username, "Trying to connect to Puppet Master on: " + connectionString);
+                Log.Show(_username, "Trying to register to Puppet Master on: " + connectionString);
                 pms.registerServer(_username, Helper.GetIPAddress(), _port);
                 Log.Show(_username, "Sucessfully registered server on Pupper Master.");
                 System.Console.ReadLine();
@@ -198,6 +212,6 @@ namespace Server
                 Log.Show(_username, "Unable to connect to Puppet Master.");
             }
         }
-       
+
     }
 }

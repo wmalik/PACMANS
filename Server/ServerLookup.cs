@@ -45,19 +45,25 @@ namespace Server
         }
     }
 
-    class ServerLookup: MarshalByRefObject, ILookupService
+    class ServerLookup : MarshalByRefObject, ILookupService
     {
         private string _username;
         ServerAction action;
         private List<ServerMetadata> _servers;
         int _sequenceNumber;
+        PuppetMasterService pms;
 
-        public ServerLookup(string username, ServerAction action, List<ServerMetadata> _servers )
+        public ServerLookup(string username, ServerAction action, List<ServerMetadata> _servers)
         {
             this._username = username;
             this.action = action;
             this._servers = _servers;
             _sequenceNumber = 0;
+        }
+
+        public void setPMS(PuppetMasterService pms)
+        {
+            this.pms = pms;
         }
 
         void ILookupService.RegisterUser(string username, string ip, int port)
@@ -72,7 +78,8 @@ namespace Server
                 RegisterInfoOnAllServer(client);
                 Log.Show(_username, "Registered client " + username + ": " + ip + ":" + port);
             }
-            finally{
+            finally
+            {
                 Monitor.Exit(this);
             }
 
@@ -133,8 +140,17 @@ namespace Server
             Monitor.Enter(this);
             try
             {
-                UnregisterUserFromOtherServers(username);
-                Log.Show(_username, "Unregistered client: " + username);
+                bool status = UnregisterUserFromOtherServers(username);
+                if (status)
+                {
+                    Log.Show(_username, "[UNREGISTER USER] " + "Unregistered client: " + username);
+                    pms.show("[UNREGISTER USER] " + _username + ": Unregistered client: " + username);
+                }
+                else
+                {
+                    Log.Show(_username, "[UNREGISTER USER] " + "No such entry exists: " + username);
+                    pms.show("[UNREGISTER USER] " + _username + "No such entry exists: " + username);
+                }
             }
             finally
             {
@@ -143,7 +159,7 @@ namespace Server
         }
 
 
-        private void UnregisterUserFromOtherServers(string username)
+        private bool UnregisterUserFromOtherServers(string username)
         {
             IConsistencyService[] server = new IConsistencyService[_servers.Count];
             for (int i = 0; i < _servers.Count; i++)
@@ -183,16 +199,19 @@ namespace Server
                 if (returnedValueOnUnregister2._status == false)
                 {
                     Log.Show(_username, "[UNREGISTER USER] Both the servers failed to unregister [WEIRD]");
+                    return false;
                 }
                 else
                 {
                     Log.Show(_username, "[UNREGISTER USER] One server successfully unregistered");
+                    return true;
 
                 }
             }
             else
             {
                 Log.Show(_username, "[UNREGISTER USER] One server successfully unregistered");
+                return true;
             }
         }
 
@@ -211,7 +230,7 @@ namespace Server
         }
 
 
-        private ClientMetadata lookUpOnOtherServers(string username) 
+        private ClientMetadata lookUpOnOtherServers(string username)
         {
             IConsistencyService[] server = new IConsistencyService[_servers.Count];
             for (int i = 0; i < _servers.Count; i++)
@@ -221,12 +240,12 @@ namespace Server
 
             callback returnedValueOnLookup1 = new callback();
             callback.RemoteLookupDelegate RemoteDelforLookup1 = new callback.RemoteLookupDelegate(() => server[0].ReadClientMetadata(username));
-            AsyncCallback RemoteCallbackOnLookup1 = new AsyncCallback(returnedValueOnLookup1.OurRemoteAsyncCallBack);
+            AsyncCallback RemoteCallbackOnLookup1 = new AsyncCallback(returnedValueOnLookup1.OurLookupAsyncCallBack);
             IAsyncResult RemArForLookup1 = RemoteDelforLookup1.BeginInvoke(RemoteCallbackOnLookup1, null);
 
             callback returnedValueOnLookup2 = new callback();
             callback.RemoteLookupDelegate RemoteDelforLookup2 = new callback.RemoteLookupDelegate(() => server[1].ReadClientMetadata(username));
-            AsyncCallback RemoteCallbackOnLookup2 = new AsyncCallback(returnedValueOnLookup2.OurRemoteAsyncCallBack);
+            AsyncCallback RemoteCallbackOnLookup2 = new AsyncCallback(returnedValueOnLookup2.OurLookupAsyncCallBack);
             IAsyncResult RemArForLookup2 = RemoteDelforLookup2.BeginInvoke(RemoteCallbackOnLookup2, null);
 
             Log.Show(_username, "[READ METADATA] Waiting for one server to return");
@@ -297,8 +316,10 @@ namespace Server
             {
                 Monitor.Exit(this);
             }
-                
+
             Log.Show(_username, "[RETRIEVED SEQ NUMBER] Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
+            if (pms != null)
+                pms.show(_username + " [RETRIEVED SEQ NUMBER] Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
             return _sequenceNumber;
         }
 
@@ -332,7 +353,7 @@ namespace Server
             IAsyncResult RemAr2 = RemoteDel2.BeginInvoke(RemoteCallback2, null);
 
 
-          //  Log.Show(_username, "[SEQ NUMBER] Waiting for one Server to return");
+            //  Log.Show(_username, "[SEQ NUMBER] Waiting for one Server to return");
             returnedValue1.waiter.WaitOne();
 
             if (returnedValue1._status == false)
@@ -353,7 +374,7 @@ namespace Server
             }
             else
             {
-                Log.Show(_username, "[SEQ NUMBER] One of the servers successfully set the sequence number: "+ _sequenceNumber);
+                Log.Show(_username, "[SEQ NUMBER] One of the servers successfully set the sequence number: " + _sequenceNumber);
             }
         }
 

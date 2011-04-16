@@ -297,8 +297,7 @@ namespace PuppetMaster
             {
                 ServerMetadata sm = (ServerMetadata)pms.getServersList()[username];
                 IServerFacade isf = (IServerFacade)pms.getServerFacadeList()[username];
-                //isf.Connect(); /*commented because Server Facade is not implemented yet*/
-                show("TODO: Server Facade to be implemented");
+                isf.Connect(); /*commented because Server Facade is not implemented yet*/
                 //show(username + " is now connected");
                 treeView1.SelectedNode.ImageIndex = 0;
                 treeView1.SelectedNode.SelectedImageIndex = 0;
@@ -418,6 +417,7 @@ namespace PuppetMaster
                                 startInfo.FileName = path + "Server.exe";
                                 startInfo.Arguments = username + " " + port;
                                 Process.Start(startInfo);
+                                //TODO: save the PIDS of all processes and kill them on exit
 
                                 //if server  is online, we move on to the next event. If not, we wait until the server is online
                                 IServerFacade isf = (IServerFacade)pms.getServerFacadeList()[username];

@@ -34,6 +34,7 @@ namespace Client
         private int _puppetPort;
         private List<ServerMetadata> _servers;
         PuppetMasterService pms;
+        string connectionString;
         private SlotManager _slotManager;
 
         private bool _isOnline;
@@ -47,7 +48,7 @@ namespace Client
             ReadConfigurationFile(filename);
             _isOnline = false;
             _slotManager = new SlotManager(_username, _port, _servers);
-            _logfile = new StreamWriter(_path+"log\\log_client_" + _username + ".txt", true);
+            _logfile = new StreamWriter(_path + "log\\log_client_" + _username + ".txt", true);
             _logfile.WriteLine("-");
             _logfile.AutoFlush = true;
         }
@@ -58,7 +59,7 @@ namespace Client
             _username = username;
             _port = port;
             _path = path;
-            _configFile = _path+configFile;
+            _configFile = _path + configFile;
             ReadConfigurationFile();
             _isOnline = false;
             _slotManager = new SlotManager(_username, _port, _servers);
@@ -140,8 +141,19 @@ namespace Client
         {
             RegisterChannel();
             StartFacade();
-            TestConnect();
+            initPMSObject();
+            Connect();
             NotifyPuppetMaster();
+        }
+
+        private void initPMSObject()
+        {
+            connectionString = "tcp://" + _puppetIP + ":" + _puppetPort + "/" + Common.Constants.PUPPET_MASTER_SERVICE_NAME;
+
+            pms = (PuppetMasterService)Activator.GetObject(
+                typeof(PuppetMasterService),
+                connectionString);
+
         }
 
         private void RegisterChannel()
@@ -180,12 +192,6 @@ namespace Client
         private void NotifyPuppetMaster()
         {
 
-            String connectionString = "tcp://" + _puppetIP + ":" + _puppetPort + "/" + Common.Constants.PUPPET_MASTER_SERVICE_NAME;
-
-            pms = (PuppetMasterService)Activator.GetObject(
-                typeof(PuppetMasterService),
-                connectionString);
-
             try
             {
                 Log.Show(_username, "Trying to connect to Puppet Master on: " + connectionString);
@@ -207,6 +213,7 @@ namespace Client
         /*
          * Implements IFacadeService
          */
+        /*
         bool IClientFacade.Connect()
         {
             if (!_isOnline)
@@ -217,30 +224,40 @@ namespace Client
                 int seqnum = Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
                 Log.Show(_username, "Sequence number acquired: " + seqnum);
                 Log.Show(_username, "Client is connected.");
-                
+
 
                 return true;
             }
 
-            return false;        
+            return false;
         }
-        
-        public bool TestConnect() //TODO: Just to test the server. Change it to IclientFacde.Connect() later.
+        */
+        public bool Connect() //TODO: Just to test the server. Change it to IclientFacde.Connect() later.
         {
-           // pms.show(" ("+_username+")"+" I have received a Connect message");
 
             if (!_isOnline)
             {
+                
                 _isOnline = true;
                 StartServices();
-                Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
-
-                //Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
-
+                //TODO:WASIF
+                //Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
                 int seqnum = Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
-                Log.Show(_username, "Sequence number acquired: "+seqnum);
+                Log.Show(_username, "Sequence number acquired: " + seqnum);
                 Log.Show(_username, "Client is connected.");
-                //Helper.GetRandomServer(_servers).Lookup(_username); //REMOVEME
+                ClientMetadata cmd = Helper.GetRandomServer(_servers).Lookup(_username); //REMOVEME
+                //pms.show("");
+                if (cmd == null)
+                {
+                    pms.show("Client: "+_username + " no such user registered.");
+                }
+                else
+                {
+                    pms.show(cmd.IP_Addr + " is the ip of " + cmd.Username);
+                    //Helper.GetRandomServer(_servers).UnregisterUser(_username);
+
+                }
+                Helper.GetRandomServer(_servers).UnregisterUser(_username);
                 return true;
             }
 
@@ -253,14 +270,14 @@ namespace Client
             if (_isOnline)
             {
                 _isOnline = false;
-                //StopServices();
+                StopServices();
                 //Helper.GetRandomServer(_servers).UnregisterUser(_username);
                 //Broadcast offline information to initiators of ongoing reservations
                 Log.Show(_username, "Client is disconnected.");
                 return true;
             }
 
-            
+
             return false;
         }
 
