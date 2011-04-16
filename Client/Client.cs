@@ -33,23 +33,43 @@ namespace Client
         private string _puppetIP;
         private int _puppetPort;
         private List<ServerMetadata> _servers;
-
+        PuppetMasterService pms;
+        string connectionString;
         private SlotManager _slotManager;
 
         private bool _isOnline;
 
         private StreamWriter _logfile;
-
+        private string _configFile;
+        private string _path;
+        /*Deprecated*/
         public Client(string filename)
         {
             ReadConfigurationFile(filename);
             _isOnline = false;
             _slotManager = new SlotManager(_username, _port, _servers);
-            _logfile = new StreamWriter("log/log_client_"+_username+".txt", true);
+            _logfile = new StreamWriter(_path + "log\\log_client_" + _username + ".txt", true);
             _logfile.WriteLine("-");
             _logfile.AutoFlush = true;
         }
 
+
+        public Client(string username, int port, string path, string configFile)
+        {
+            _username = username;
+            _port = port;
+            _path = path;
+            _configFile = _path + configFile;
+            ReadConfigurationFile();
+            _isOnline = false;
+            _slotManager = new SlotManager(_username, _port, _servers);
+            string logpath = new Uri(_path + "log\\log_client_" + _username + ".txt").LocalPath;
+            _logfile = new StreamWriter(logpath, true);
+            _logfile.WriteLine("-");
+            _logfile.AutoFlush = true;
+        }
+
+        /*Deprecated*/
         private void ReadConfigurationFile(string filename)
         {
             string current_dir = System.IO.Directory.GetCurrentDirectory();
@@ -83,6 +103,36 @@ namespace Client
             }
         }
 
+        /*Please use this method for reading the conf file*/
+        private void ReadConfigurationFile()
+        {
+            string current_dir = System.IO.Directory.GetCurrentDirectory();
+            XmlDocument xmlDoc = new XmlDocument(); //* create an xml document object.
+            xmlDoc.Load(_configFile); //* load the XML document from the specified file.
+
+            XmlNodeList puppetmasteriplist = xmlDoc.GetElementsByTagName("PuppetMasterIP");
+            XmlNodeList puppetmasterportlist = xmlDoc.GetElementsByTagName("PuppetMasterPort");
+            XmlNodeList serverslist = xmlDoc.GetElementsByTagName("Server");
+
+            _puppetIP = puppetmasteriplist[0].InnerText;
+            _puppetPort = Convert.ToInt32(puppetmasterportlist[0].InnerText);
+            _servers = new List<ServerMetadata>();
+
+            for (int i = 0; i < 3; i++)
+            {
+                //TODO: currently just reading first server
+                XmlNodeList server_ipportlist = serverslist[i].ChildNodes;
+                string id = server_ipportlist[0].InnerText;
+                string ip_addr = server_ipportlist[1].InnerText;
+                int port = Convert.ToInt32(server_ipportlist[2].InnerText);
+                ServerMetadata sm = new ServerMetadata();
+                sm.Username = id;
+                sm.IP_Addr = ip_addr;
+                sm.Port = port;
+                _servers.Add(sm);
+            }
+        }
+
         /*
          * Implements IClient
          */
@@ -91,15 +141,26 @@ namespace Client
         {
             RegisterChannel();
             StartFacade();
+            initPMSObject();
             Connect();
             NotifyPuppetMaster();
+        }
+
+        private void initPMSObject()
+        {
+            connectionString = "tcp://" + _puppetIP + ":" + _puppetPort + "/" + Common.Constants.PUPPET_MASTER_SERVICE_NAME;
+
+            pms = (PuppetMasterService)Activator.GetObject(
+                typeof(PuppetMasterService),
+                connectionString);
+
         }
 
         private void RegisterChannel()
         {
             IDictionary RemoteChannelProperties = new Dictionary<string, string>();
             RemoteChannelProperties["port"] = _port.ToString();
-            RemoteChannelProperties["name"] = _username ;
+            RemoteChannelProperties["name"] = _username;
             TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
             ChannelServices.RegisterChannel(channel, true);
         }
@@ -112,8 +173,9 @@ namespace Client
             Log.WriteToFile(_logfile, _username, "Started Facade service");
         }
 
-        void StartServices() {
-        
+        void StartServices()
+        {
+
             //Booking Service
             string serviceName = _username + "/" + Common.Constants.BOOKING_SERVICE_NAME;
             Helper.StartService(_username, _port, serviceName, _slotManager, typeof(IBookingService));
@@ -130,19 +192,13 @@ namespace Client
         private void NotifyPuppetMaster()
         {
 
-            String connectionString = "tcp://" + _puppetIP + ":" + _puppetPort + "/" + Common.Constants.PUPPET_MASTER_SERVICE_NAME;
-
-            PuppetMasterService pms = (PuppetMasterService)Activator.GetObject(
-                typeof(PuppetMasterService),
-                connectionString);
-            
             try
             {
-                Log.Show(_username, "Trying to connect to Pupper Master on: " + connectionString);
+                Log.Show(_username, "Trying to connect to Puppet Master on: " + connectionString);
                 pms.registerClient(_username, Helper.GetIPAddress(), _port);
                 Log.Show(_username, "Sucessfully registered client on Puppet Master.");
                 Log.WriteToFile(_logfile, _username, "Sucessfully registered client on Puppet Master.");
-                
+
                 System.Console.ReadLine();
             }
             catch (SocketException)
@@ -158,15 +214,36 @@ namespace Client
          * Implements IFacadeService
          */
 
-        public bool Connect()
+        public bool Connect() //TODO: Just to test the server. Change it to IclientFacde.Connect() later.
         {
+
             if (!_isOnline)
             {
+                
                 _isOnline = true;
                 StartServices();
                 Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
-                //Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
+
+                //ILookupService ils = Helper.GetRandomServer(_servers);
+                //Log.Show(_username, "%%%%%%%%%%% ils was acquired succesfully");
+                //int seqnum = ils.NextSequenceNumber();  //Testing purpose. To be removed later.
+                //Log.Show(_username, "%%%%%%%%%%% seqnum was acquired succesfully");
+                
+                /*Log.Show(_username, "Sequence number acquired: " + seqnum);
                 Log.Show(_username, "Client is connected.");
+                ClientMetadata cmd = Helper.GetRandomServer(_servers).Lookup(_username); //REMOVEME
+                //pms.show("");
+                if (cmd == null)
+                {
+                    pms.show("Client: "+_username + " no such user registered.");
+                }
+                else
+                {
+                    pms.show(cmd.IP_Addr + " is the ip of " + cmd.Username);
+                    //Helper.GetRandomServer(_servers).UnregisterUser(_username);
+
+                }
+                Helper.GetRandomServer(_servers).UnregisterUser(_username);*/
                 return true;
             }
 
@@ -174,12 +251,12 @@ namespace Client
         }
 
         bool IClientFacade.Disconnect()
-        { 
+        {
+            //pms.show(" ("+_username+")"+" I have received a Disconnect message");  
             if (_isOnline)
             {
                 _isOnline = false;
                 StopServices();
-                Helper.GetRandomServer(_servers).UnregisterUser(_username);
                 //Broadcast offline information to initiators of ongoing reservations
                 Log.Show(_username, "Client is disconnected.");
                 return true;
@@ -195,7 +272,7 @@ namespace Client
             return _slotManager.ReadCalendar();
         }
 
-         bool IClientFacade.CreateReservation(ReservationRequest reservation)
+        bool IClientFacade.CreateReservation(ReservationRequest reservation)
         {
 
 

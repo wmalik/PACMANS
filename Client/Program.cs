@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 
 
 namespace Client
@@ -11,6 +14,20 @@ namespace Client
     {
         static void Main(string[] args)
         {
+          
+            string username = args[0];
+            int port = Convert.ToInt32(args[1]);
+            string path = Path.GetDirectoryName(Assembly.GetAssembly(typeof(Client)).CodeBase)+"\\";
+            Console.WriteLine(username+" "+port);
+            
+
+            IClient client = new Client(username, port, path, "conf/Client.xml");
+            Thread thread = new Thread(client.Init);
+            thread.Start();
+            
+
+            /*
+            
             IClient client1 = new Client("conf/Client1.xml");
             Thread t1 = new Thread(client1.Init);
             t1.Start();
@@ -39,6 +56,8 @@ namespace Client
             IClient client5 = new Client("conf/Client5.xml");
             Thread t5 = new Thread(client5.Init);
             t5.Start();
+             */
+
         }
     }
 }

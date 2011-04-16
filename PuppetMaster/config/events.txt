@@ -1,5 +1,9 @@
-disconnect Client3
-disconnect Client1
-connect Client1
-reservation WasifsParty;Client1,Client2;1,2;
+connect central-1 127.0.0.1:50001
+connect central-2 127.0.0.1:50002
+connect central-3 127.0.0.1:50003
+connect wasif 127.0.0.1:6677
+connect navaneeth 127.0.0.1:6678
+connect paulo 127.0.0.1:6679
+connect joao_garcia 127.0.0.1:6680
+readCalendar paulo 127.0.0.1:9102
 

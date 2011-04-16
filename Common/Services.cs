@@ -11,6 +11,10 @@ namespace Common.Services
 {
 
     /* SERVICE EXPOSED FROM CLIENT TO THE PUPPER MASTER */
+    public interface IClientCreator
+    {
+        bool CreateClient(string username, string ipAddr, int port);
+    }
 
     public interface IClientFacade
     {

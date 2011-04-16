@@ -22,46 +22,31 @@ namespace Server
     {
         private int _lastSeenSequenceNumber;
         private string _username;
+        private Dictionary<string, ClientMetadata> _clients;
 
         public ServerAction(string _username)
         {
             this._username = _username;
             _lastSeenSequenceNumber = 0;
+            _clients = new Dictionary<string, ClientMetadata>();
         }
 
-        //private IConsistencyService getInvokingServer(ServerMetadata server, string username)
-        //{
-        //    ServerMetadata chosenServer = server;
-        //    String connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + username + "/" + Common.Constants.CONSISTENCY_SERVICE_NAME;
-        //    Log.Show(username, "Trying to find server: " + connectionString);
-
-        //    IConsistencyService invokingServer = (IConsistencyService)Activator.GetObject(
-        //        typeof(IConsistencyService),
-        //        connectionString);
-
-        //    return invokingServer;
-
-        //}
-
+        
         public bool WriteSequenceNumber(int seqNum)
         {
             Monitor.Enter(this);
-
             try
             {
-                Log.Show(_username, "WriteSeqnum successfully invoked for sequence number: " + seqNum);
                 if (seqNum > _lastSeenSequenceNumber)
                 {
+                    Log.Show(_username, "[WRITE SEQ NUMBER] WriteSeqnum successful for sequence number: " + seqNum );
                     _lastSeenSequenceNumber = seqNum;
-
                     return true;
                 }
-
                 else
                 {
-
+                    Log.Show(_username, "[WRITE SEQ NUMBER FAIL] WriteSeqnum failed for sequence number: " + seqNum + " last seen sequence number: " +_lastSeenSequenceNumber );
                     return false;
-
                 }
             }
             finally
@@ -71,10 +56,41 @@ namespace Server
         }
 
 
-        public int ReadSequenceNumber()
+
+
+        public bool WriteClientMetadata(ClientMetadata clientInfo)
         {
-            return 0;
+            Monitor.Enter(this);
+            try
+            {
+                _clients[clientInfo.Username] = clientInfo;
+                return true;
+            }
+            finally
+            {
+                Monitor.Exit(this);
+            }
         }
 
+
+        public ClientMetadata ReadClientMetadata(string username)
+        {
+            ClientMetadata lookedUp;
+            if (_clients.TryGetValue(username, out lookedUp))
+            {
+                Log.Show(_username, "[READ METADATA] Client info retrieved is: " + username);
+                return lookedUp;
+            }
+
+            Log.Show(_username, "No client info found: " + username);
+            return null;
+        }
+
+
+        public bool UnregisterUser(string username)
+        {
+            return _clients.Remove(username);
+        }
     }
+
 }

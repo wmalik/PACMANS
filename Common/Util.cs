@@ -9,6 +9,7 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
 using System.IO;
+using System.Threading;
 
 namespace Common.Util
 {
@@ -17,6 +18,8 @@ namespace Common.Util
     {
         public static string GetIPAddress()
         {
+            //return "127.0.0.1";
+
             IPHostEntry host;
             string localIP = "?";
             host = Dns.GetHostEntry(Dns.GetHostName());
@@ -34,15 +37,27 @@ namespace Common.Util
         {
 
             //TODO current implementation just get first server from list
-            ServerMetadata chosenServer = servers[0];
+            //int server_num=0;
+            //ServerMetadata chosenServer = servers[(server_num++)%3];
+            ILookupService server = null;
+            String connectionString="";
+            ServerMetadata chosenServer = servers[0]; //this line is to make C# happy 
 
-            String connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + chosenServer.Username + "/" + Common.Constants.LOOKUP_SERVICE_NAME;
+            while (server == null)
+            {
+                int server_num = new Random().Next(0, 3);
 
-            ILookupService server = (ILookupService)Activator.GetObject(
-                typeof(ILookupService),
-                connectionString);
+                chosenServer= servers[server_num];
 
+                connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + chosenServer.Username + "/" + Common.Constants.LOOKUP_SERVICE_NAME;
 
+                server = (ILookupService)Activator.GetObject(
+                    typeof(ILookupService),
+                    connectionString);
+                Thread.Sleep(100);
+
+            }
+            Console.WriteLine("Random server to contact is: "+chosenServer.Username);
             return server;
         }
 
@@ -69,7 +84,7 @@ namespace Common.Util
 
         public static void Show(string username, string msg)
         {
-            Console.WriteLine("[" + DateTime.Now.ToString("T") + "][" + username + "] " + msg);
+            Console.WriteLine("[" + DateTime.Now.ToString("T") + "] [" + username + "] " + msg);
         }
 
         public static void Debug(string username, string msg)
@@ -82,7 +97,7 @@ namespace Common.Util
 
         public static void WriteToFile(StreamWriter logfile, string username, string msg)
         {
-            string logmsg ="[" + DateTime.Now.ToString("T") + "][" + username + "] " + msg;
+            string logmsg = "[" + DateTime.Now.ToString("T") + "][" + username + "] " + msg;
             logfile.WriteLine(logmsg);
             logfile.Flush();
 
