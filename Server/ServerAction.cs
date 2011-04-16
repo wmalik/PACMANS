@@ -31,35 +31,21 @@ namespace Server
             _clients = new Dictionary<string, ClientMetadata>();
         }
 
-
-        //private IConsistencyService getInvokingServer(ServerMetadata server, string username)
-        //{
-        //    ServerMetadata chosenServer = server;
-        //    String connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + username + "/" + Common.Constants.CONSISTENCY_SERVICE_NAME;
-        //    Log.Show(username, "Trying to find server: " + connectionString);
-
-        //    IConsistencyService invokingServer = (IConsistencyService)Activator.GetObject(
-        //        typeof(IConsistencyService),
-        //        connectionString);
-
-        //    return invokingServer;
-
-        //}
-
         
         public bool WriteSequenceNumber(int seqNum)
         {
             Monitor.Enter(this);
             try
             {
-                Log.Show(_username, "[SEQ NUMBER] WriteSeqnum successfully invoked for sequence number: " + seqNum);
                 if (seqNum > _lastSeenSequenceNumber)
                 {
+                    Log.Show(_username, "[WRITE SEQ NUMBER] WriteSeqnum successful for sequence number: " + seqNum );
                     _lastSeenSequenceNumber = seqNum;
                     return true;
                 }
                 else
                 {
+                    Log.Show(_username, "[WRITE SEQ NUMBER FAIL] WriteSeqnum failed for sequence number: " + seqNum + " last seen sequence number: " +_lastSeenSequenceNumber );
                     return false;
                 }
             }
@@ -99,5 +85,13 @@ namespace Server
             Log.Show(_username, "No client info found: " + username);
             return null;
         }
+
+
+        public bool UnregisterUser(string username)
+        {
+            _clients.Remove(username);
+            return true;
+        }
     }
+
 }

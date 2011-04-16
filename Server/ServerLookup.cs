@@ -62,12 +62,19 @@ namespace Server
 
         void ILookupService.RegisterUser(string username, string ip, int port)
         {
-            ClientMetadata client = new ClientMetadata();
-            client.IP_Addr = ip;
-            client.Port = port;
-            client.Username = username;
-            RegisterInfoOnAllServer(client);
-            Log.Show(_username, "Registered client " + username + ": " + ip + ":" + port);
+            Monitor.Enter(this);
+            try
+            {
+                ClientMetadata client = new ClientMetadata();
+                client.IP_Addr = ip;
+                client.Port = port;
+                client.Username = username;
+                RegisterInfoOnAllServer(client);
+                Log.Show(_username, "Registered client " + username + ": " + ip + ":" + port);
+            }
+            finally{
+                Monitor.Exit(this);
+            }
         }
 
 
@@ -122,14 +129,84 @@ namespace Server
 
         void ILookupService.UnregisterUser(string username)  //TODO: Yet to implement
         {
-            Log.Show(_username, "Unregistered client: " + username);
-            // _clients.Remove(username);
+            Monitor.Enter(this);
+            try
+            {
+                UnregisterUserFromOtherServers(username);
+                Log.Show(_username, "Unregistered client: " + username);
+            }
+            finally
+            {
+                Monitor.Exit(this);
+            }
+        }
+
+
+        private void UnregisterUserFromOtherServers(string username)
+        {
+            IConsistencyService[] server = new IConsistencyService[_servers.Count];
+            for (int i = 0; i < _servers.Count; i++)
+            {
+                server[i] = getOtherServers(_servers[i]);
+            }
+
+            //Write  generated sequence number to ourself.
+            bool status = action.UnregisterUser(username);
+            Log.Show(_username, "[UNREGISTER USER] Unregister user from self");
+            if (status == false)
+            {
+                Log.Show(_username, "[UNREGISTER USER] Unregister user at self failed!!");
+            }
+
+            callback returnedValueOnUnregister1 = new callback();
+            callback.RemoteAsyncDelegate RemoteDelForUnregister1 = new callback.RemoteAsyncDelegate(() => server[0].UnregisterUser(username));
+            AsyncCallback RemoteCallbackForUnregister1 = new AsyncCallback(returnedValueOnUnregister1.OurRemoteAsyncCallBack);
+            IAsyncResult RemAr1ForUnregister = RemoteDelForUnregister1.BeginInvoke(RemoteCallbackForUnregister1, null);
+
+
+            callback returnedValueOnUnregister2 = new callback();
+            callback.RemoteAsyncDelegate RemoteDelForUnregister2 = new callback.RemoteAsyncDelegate(() => server[1].UnregisterUser(username));
+            AsyncCallback RemoteCallbackForUnregister2 = new AsyncCallback(returnedValueOnUnregister2.OurRemoteAsyncCallBack);
+            IAsyncResult RemAr2ForUnregister = RemoteDelForUnregister2.BeginInvoke(RemoteCallbackForUnregister2, null);
+
+
+            Log.Show(_username, "[UNREGISTER USER] Waiting for one Server to return");
+            returnedValueOnUnregister1.waiter.WaitOne();
+
+            if (returnedValueOnUnregister1._status == false)
+            {
+                Log.Show(_username, "[UNREGISTER USER] One of the servers failed to unregister!!");
+
+                returnedValueOnUnregister2.waiter.WaitOne();
+
+                if (returnedValueOnUnregister2._status == false)
+                {
+                    Log.Show(_username, "[UNREGISTER USER] Both the servers failed to unregister [WEIRD]");
+                }
+                else
+                {
+                    Log.Show(_username, "[UNREGISTER USER] One server successfully unregistered");
+
+                }
+            }
+            else
+            {
+                Log.Show(_username, "[UNREGISTER USER] One server successfully unregistered");
+            }
         }
 
 
         ClientMetadata ILookupService.Lookup(string username)
         {
-            return (lookUpOnOtherServers(username));
+            Monitor.Enter(this);
+            try
+            {
+                return (lookUpOnOtherServers(username));
+            }
+            finally
+            {
+                Monitor.Exit(this);
+            }
         }
 
 
@@ -209,14 +286,24 @@ namespace Server
 
         int ILookupService.NextSequenceNumber()
         {
-            _sequenceNumber++; //increment sequence number and then try to acquire.
-            WriteSequenceNumberOnOtherServers();  //to test client functionality, comment this line to generate sequence number from one server.
-            Log.Show(_username, "[SEQ NUMBER]Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
+            //Lock the write sequence until it finishes
+            Monitor.Enter(this);
+            try
+            {
+                WriteSequenceNumberOnOtherServers();  //to test client functionality, comment this line to generate sequence number from one server.
+            }
+            finally
+            {
+                Monitor.Exit(this);
+            }
+                
+            Log.Show(_username, "[RETRIEVED SEQ NUMBER] Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
             return _sequenceNumber;
         }
 
         private void WriteSequenceNumberOnOtherServers()
         {
+            _sequenceNumber++; //increment sequence number and then try to acquire.
             IConsistencyService[] server = new IConsistencyService[_servers.Count];
             for (int i = 0; i < _servers.Count; i++)
             {
@@ -225,9 +312,9 @@ namespace Server
 
             //Write  generated sequence number to ourself.
             bool status = action.WriteSequenceNumber(_sequenceNumber);
-            Log.Show(_username, "[SEQ NUMBER] Generated sequence number write to ourself returned: " + status);
             if (status == false)
             {
+                Log.Show(_username, "[SEQ NUMBER] Generated sequence number write to ourself failed: " + _sequenceNumber);
                 _sequenceNumber++;
                 WriteSequenceNumberOnOtherServers();
             }
@@ -244,28 +331,28 @@ namespace Server
             IAsyncResult RemAr2 = RemoteDel2.BeginInvoke(RemoteCallback2, null);
 
 
-            Log.Show(_username, "[SEQ NUMBER] Waiting for one Server to return");
+          //  Log.Show(_username, "[SEQ NUMBER] Waiting for one Server to return");
             returnedValue1.waiter.WaitOne();
 
             if (returnedValue1._status == false)
             {
-                Log.Show(_username, "[SEQ NUMBER] One of the Servers failed to set the sequence number. " + returnedValue1._status);
+                Log.Show(_username, "[SEQ NUMBER] One of the Servers failed to set the sequence number: " + _sequenceNumber);
                 returnedValue2.waiter.WaitOne();
 
                 if (returnedValue2._status == false)
                 {
-                    Log.Show(_username, "[SEQ NUMBER] Both servers failed to set the sequence number ");
+                    Log.Show(_username, "[SEQ NUMBER] Both servers failed to set the sequence number: " + _sequenceNumber);
                     _sequenceNumber++;
                     WriteSequenceNumberOnOtherServers(); // try until you get a sequence number.
                 }
                 else
                 {
-                    Log.Show(_username, "[SEQ NUMBER] One server successfully set the sequence number. " + returnedValue2._status);
+                    Log.Show(_username, "[SEQ NUMBER] One server successfully set the sequence number: " + _sequenceNumber);
                 }
             }
             else
             {
-                Log.Show(_username, "[SEQ NUMBER] One of the servers successfully set the sequence number. Return!!");
+                Log.Show(_username, "[SEQ NUMBER] One of the servers successfully set the sequence number: "+ _sequenceNumber);
             }
         }
 
