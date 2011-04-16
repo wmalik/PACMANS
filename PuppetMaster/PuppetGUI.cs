@@ -214,7 +214,7 @@ namespace PuppetMaster
         {
 
             //fetch selected username
-            string username = treeView1.SelectedNode.Text;
+            string username = treeView1.SelectedNode.Text.Trim();
 
             if (username.Equals("Servers") || username.Equals("Clients"))
                 return;
@@ -225,7 +225,7 @@ namespace PuppetMaster
             {
                 ServerMetadata sm = (ServerMetadata)pms.getServersList()[username];
                 IServerFacade isf = (IServerFacade)pms.getServerFacadeList()[username];
-                //isf.Disconnect(); /*commented because Server Facade is not implemented yet*/
+                isf.Disconnect(); /*commented because Server Facade is not implemented yet*/
                 show("TODO: Server Facade to be implemented");
                 //show(username + " has been disconnected");
                 treeView1.SelectedNode.ImageIndex = 1;
@@ -372,7 +372,8 @@ namespace PuppetMaster
                                 isf = (IServerFacade)pms.getServerFacadeList()[username];
                                 Thread.Sleep(1000);
                             }
-                            //isf.Disconnect(); /*Server Facade not implemented yet*/
+
+                            isf.Disconnect(); /*Server Facade not implemented yet*/
                             changeIconToDisconnected(username, null);
                             show("Server disconnected. TODO: call server facade");
                         }
@@ -417,6 +418,7 @@ namespace PuppetMaster
                                 startInfo.FileName = path + "Server.exe";
                                 startInfo.Arguments = username + " " + port;
                                 Process.Start(startInfo);
+                                Thread.Sleep(500);
 
                             }
                             else //means its a client
@@ -427,6 +429,7 @@ namespace PuppetMaster
                                 startInfo.FileName = path + "Client.exe";
                                 startInfo.Arguments = username + " " + port;
                                 Process.Start(startInfo);
+                                Thread.Sleep(500);
 
                             }
                         }
