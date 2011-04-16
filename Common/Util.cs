@@ -9,6 +9,7 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
 using System.IO;
+using System.Threading;
 
 namespace Common.Util
 {
@@ -36,6 +37,8 @@ namespace Common.Util
         {
 
             //TODO current implementation just get first server from list
+            //int server_num=0;
+            //ServerMetadata chosenServer = servers[(server_num++)%3];
             ServerMetadata chosenServer = servers[0];
 
             String connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + chosenServer.Username + "/" + Common.Constants.LOOKUP_SERVICE_NAME;
@@ -44,7 +47,16 @@ namespace Common.Util
                 typeof(ILookupService),
                 connectionString);
 
+            while (server == null)
+            {
+                Console.WriteLine("Trying connection string:" + connectionString);
+                Thread.Sleep(500);
+                server = (ILookupService)Activator.GetObject(
+                    typeof(ILookupService),
+                    connectionString);
+            }
 
+            Console.WriteLine("Returning the server with connection string:"+connectionString);
             return server;
         }
 
@@ -69,7 +81,7 @@ namespace Common.Util
 
         public static void Show(string username, string msg)
         {
-            Console.WriteLine("[" + DateTime.Now.ToString("T") + "][" + username + "] " + msg);
+            Console.WriteLine("[" + DateTime.Now.ToString("T") + "] [" + username + "] " + msg);
         }
 
         public static void WriteToFile(StreamWriter logfile, string username, string msg)

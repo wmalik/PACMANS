@@ -60,7 +60,7 @@ namespace Client
             _path = path;
             _configFile = _path+configFile;
             ReadConfigurationFile();
-            _isOnline = true;
+            _isOnline = false;
             _slotManager = new SlotManager(_username, _port, _servers);
             string logpath = new Uri(_path + "log\\log_client_" + _username + ".txt").LocalPath;
             _logfile = new StreamWriter(logpath, true);
@@ -209,18 +209,34 @@ namespace Client
          */
         bool IClientFacade.Connect()
         {
-            return true;        
-        }
-
-        public bool TestConnect() //TODO: Just to test the server. Change it to IclientFacde.Connect() later.
-        {
-           // pms.show(" ("+_username+")"+" I have received a Connect message");
             if (!_isOnline)
             {
                 _isOnline = true;
                 StartServices();
                 Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
-                Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
+                int seqnum = Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
+                Log.Show(_username, "Sequence number acquired: " + seqnum);
+                Log.Show(_username, "Client is connected.");
+                return true;
+            }
+
+            return false;        
+        }
+        
+        public bool TestConnect() //TODO: Just to test the server. Change it to IclientFacde.Connect() later.
+        {
+           // pms.show(" ("+_username+")"+" I have received a Connect message");
+
+            if (!_isOnline)
+            {
+                _isOnline = true;
+                StartServices();
+                Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
+
+                //Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
+
+                int seqnum = Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
+                Log.Show(_username, "Sequence number acquired: "+seqnum);
                 Log.Show(_username, "Client is connected.");
                 return true;
             }
@@ -230,7 +246,7 @@ namespace Client
 
         bool IClientFacade.Disconnect()
         {
-            pms.show(" ("+_username+")"+" I have received a Disconnect message");  
+            //pms.show(" ("+_username+")"+" I have received a Disconnect message");  
             if (_isOnline)
             {
                 _isOnline = false;
