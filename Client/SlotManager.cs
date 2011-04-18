@@ -212,7 +212,7 @@ namespace Client
             if (!ack)
             {
                 ReservationSlot slot = GetSlot(res, slotID);
-                AbortReservationSlot(slot);
+                AbortReservationSlot(slot, false);
             }
 
             //Check if all participants replied before moving to next phase
@@ -243,7 +243,7 @@ namespace Client
             ReservationSlot slot = GetSlot(res, slotID);
             if (slot.State != ReservationSlotState.ABORTED && !ack)
             {
-                AbortReservationSlot(slot);
+                AbortReservationSlot(slot, false);
             }
 
             //Check if all participants replied before moving to next phase
@@ -477,7 +477,7 @@ namespace Client
             {
                 if (slot.State != ReservationSlotState.ABORTED)
                 {
-                    AbortReservationSlot(slot);
+                    AbortReservationSlot(slot, false);
                 }
             }
 
@@ -655,14 +655,16 @@ namespace Client
             }
         }
 
-        private void AbortReservationSlot(ReservationSlot slot)
+        private void AbortReservationSlot(ReservationSlot slot, bool locked)
         {
+            Log.Debug(_userName, "Aborting slot " + slot.SlotID + " from reservation " + slot.ReservationID);
+
             if (slot != null)
             {
                 slot.State = ReservationSlotState.ABORTED;
             }
 
-            //GET LOCK HERE
+            //IF NOT LOCKED GET LOCK HERE
 
             CalendarSlot cSlot = _calendar[slot.SlotID];
 
@@ -698,6 +700,8 @@ namespace Client
                     }
                 }
             }
+
+            //IF NOT LOCKED RELEASE LOCK HERE
         }
 
         /*
@@ -749,6 +753,14 @@ namespace Client
                     calendarSlot.BookQueue.Remove(resID);
                 }
             }
+
+            foreach (ReservationSlot slot in res.Slots)
+            {
+                if (slot != resSlot && slot.State != ReservationSlotState.ABORTED)
+                {
+                    AbortReservationSlot(slot, true);
+                }
+            }
         }
 
         //Verify calendar slots and create reservation states
@@ -776,7 +788,7 @@ namespace Client
                     calendarSlot = new CalendarSlot();
                     calendarSlot.SlotNum = slot;
                     calendarSlot.State = CalendarSlotState.ACKNOWLEDGED;
-                    calendarSlot.WaitingBook.Add(slot);
+                    calendarSlot.WaitingBook.Add(req.ReservationID);
 
                     _calendar[slot] = calendarSlot;
                     Log.Debug(_userName, "Creating new calendar entry. Slot: " + calendarSlot.SlotNum + ". State: " + calendarSlot.State);
@@ -853,7 +865,7 @@ namespace Client
                 }
                 else if (slot.State != ReservationSlotState.ABORTED)
                 {
-                    AbortReservationSlot(slot);
+                    AbortReservationSlot(slot, false);
                 }
             }
 
