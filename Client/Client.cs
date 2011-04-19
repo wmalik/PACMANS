@@ -42,6 +42,15 @@ namespace Client
         private StreamWriter _logfile;
         private string _configFile;
         private string _path;
+
+
+        public override object InitializeLifetimeService()
+        {
+
+            return null;
+
+        }
+
         /*Deprecated*/
         public Client(string filename)
         {
