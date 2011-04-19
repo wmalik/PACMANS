@@ -89,6 +89,33 @@ namespace Client
                 return false;
             }
 
+            //just the initiator is on the participation
+            if (req.Users.Count == 1)
+            {
+                bool assigned = false;
+
+                foreach (ReservationSlot slot in res.Slots)
+                {
+
+
+                    if(slot.State != ReservationSlotState.ABORTED && _calendar[slot.SlotID].State != CalendarSlotState.ASSIGNED){
+                        AssignCalendarSlot(res, slot);
+                        assigned = true;
+                        return true;
+                    }
+                    else if (slot.State != ReservationSlotState.ABORTED)
+                    {
+                        AbortReservationSlot(slot, true);
+                    }
+                }
+
+                if (!assigned)
+                {
+                    AbortReservation(res.ReservationID);
+                    return false;
+                }
+            }
+
             //Retrieve user's metadata
             List<ClientMetadata> onlineUsers = LookupUsers(req);
 
@@ -737,6 +764,7 @@ namespace Client
             //Change calendar and reservation slot states
             CalendarSlot calendarSlot = _calendar[resSlot.SlotID];
             calendarSlot.State = CalendarSlotState.ASSIGNED;
+            calendarSlot.ReservationID = res.ReservationID;
 
             //Remove from list of active reservations
             _activeReservations.Remove(res.ReservationID);
