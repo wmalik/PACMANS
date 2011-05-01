@@ -476,7 +476,7 @@ namespace PuppetMaster
                         {
                             show("Trying to reconnect to initiator: "+initiator);
                             icf = (IClientFacade)pms.getClientFacadeList()[initiator];
-                            Thread.Sleep(500);
+                            Thread.Sleep(100);
                         }
                         icf.CreateReservation(rr);
                         Thread.Sleep(1000);

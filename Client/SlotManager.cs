@@ -41,6 +41,14 @@ namespace Client
 
         private List<ServerMetadata> _servers;
 
+
+        public override object InitializeLifetimeService()
+        {
+
+            return null;
+
+        }
+
         public SlotManager(string userName, int port, List<ServerMetadata> servers)
         {
             _calendar = new Dictionary<int, CalendarSlot>();

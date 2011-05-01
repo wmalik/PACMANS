@@ -1,0 +1,5 @@
+﻿TODO for PACMANS
+Clients should retry reservations periodically if clients are disconnected at the time of reservation
+Servers die if any other server is not online
+PuppetMaster needs to handle spaces in config files
+Unlimited lease for remoting needs to be enabled for all services

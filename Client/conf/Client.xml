@@ -6,16 +6,16 @@
   <Server>
     <id>central-1</id>
     <ip>127.0.0.1</ip>
-    <port>50001</port>
+    <port>1000</port>
   </Server>
   <Server>
     <id>central-2</id>
     <ip>127.0.0.1</ip>
-    <port>50002</port>
+    <port>1001</port>
   </Server>
   <Server>
     <id>central-3</id>
     <ip>127.0.0.1</ip>
-    <port>50003</port>
+    <port>1002</port>
   </Server>
 </config>

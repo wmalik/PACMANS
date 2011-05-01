@@ -42,6 +42,15 @@ namespace Client
         private StreamWriter _logfile;
         private string _configFile;
         private string _path;
+
+
+        public override object InitializeLifetimeService()
+        {
+
+            return null;
+
+        }
+
         /*Deprecated*/
         public Client(string filename)
         {
@@ -222,7 +231,8 @@ namespace Client
                 
                 _isOnline = true;
                 StartServices();
-                Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
+                //Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
+                Helper.GetRandomServer(_servers).NextSequenceNumber();
 
                 //ILookupService ils = Helper.GetRandomServer(_servers);
                 //Log.Show(_username, "%%%%%%%%%%% ils was acquired succesfully");

@@ -1,0 +1,9 @@
+connect central-1 127.0.0.1:2001
+connect central-2 127.0.0.1:2002
+connect central-3 127.0.0.1:2003
+connect wasif1 127.0.0.1:3001
+connect wasif2 127.0.0.1:3002
+connect wasif3 127.0.0.1:3003
+disconnect central-1
+disconnect wasif1
+connect wasif4 127.0.0.1:3004
