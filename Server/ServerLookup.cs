@@ -25,7 +25,6 @@ namespace Server
         public delegate ClientMetadata RemoteLookupDelegate();
         public delegate Dictionary<string, ClientMetadata> RemoteUpdateDelegate();
         public bool _status;
-        public int _serverFail;
         public ClientMetadata data = new ClientMetadata();
         public Dictionary<string, ClientMetadata> info;
         public ManualResetEvent waiter = new ManualResetEvent(false);
@@ -41,7 +40,6 @@ namespace Server
                 {
                     RemoteAsyncDelegate del = (RemoteAsyncDelegate)((AsyncResult)ar).AsyncDelegate;
                     _status = del.EndInvoke(ar);
-                    _serverFail = 2; //hack to handle server faults
                     Console.WriteLine("\nSIGNALLED STATUS" + _status);
                     waiter.Set();
                 }
@@ -175,7 +173,7 @@ namespace Server
             IAsyncResult RemArForRegister2 = RemoteDelforRegister2.BeginInvoke(RemoteCallbackOnRegister1, null);
 
             action.WriteClientMetadata(client); //First Self Register
-
+            Log.Show(_username, "[REGISTER CLIENT] Registered on self!!");
             Log.Show(_username, "[REGISTER CLIENT] Waiting for atleast one Server to return");
 
             returnedValueOnRegister1.waiter.WaitOne();

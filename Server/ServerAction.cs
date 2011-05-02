@@ -64,6 +64,7 @@ namespace Server
             try
             {
                 _clients[clientInfo.Username] = clientInfo;
+                Log.Show(_username, "[REGISTER CLIENT WRITE] Client info registered for " + clientInfo.Username);
                 return true;
             }
             finally
@@ -78,11 +79,11 @@ namespace Server
             ClientMetadata lookedUp;
             if (_clients.TryGetValue(username, out lookedUp))
             {
-                Log.Show(_username, "[READ METADATA] Client info retrieved is: " + username);
+                Log.Show(_username, "[READ METADATA RETRIEVE] Client info retrieved is: " + username);
                 return lookedUp;
             }
 
-            Log.Show(_username, "No client info found: " + username);
+            Log.Show(_username, "[READ METADATA RETRIEVE] No client info found: " + username);
             return null;
         }
 

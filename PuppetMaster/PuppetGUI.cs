@@ -72,7 +72,7 @@ namespace PuppetMaster
             }
             string msg = (string)sender;
 
-            this.consoleBox.AppendText("\r\n" + "(*) " + msg);
+            this.consoleBox.AppendText("\r\n" + "(*) " + msg);  // WASIF- Handle exception
         }
 
         private string getIPAddress()

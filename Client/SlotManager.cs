@@ -46,14 +46,6 @@ namespace Client
 
         private List<ServerMetadata> _servers;
 
-<<<<<<< HEAD
-
-        public override object InitializeLifetimeService()
-        {
-
-            return null;
-
-=======
         private IClientMonitor _clientMonitor;
         private IMessageDispatcher _msgDispatcher;
 
@@ -64,7 +56,6 @@ namespace Client
         public override object InitializeLifetimeService()
         {
             return null;
->>>>>>> 4c6451dbb4b87e89cbc363229b5cafcfd243a0f2
         }
 
         public SlotManager(string userName, int port, List<ServerMetadata> servers)

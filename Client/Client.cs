@@ -192,22 +192,21 @@ namespace Client
                 
                 _isOnline = true;
                 StartServices();
-
-    /*
-            HERE: try
+                Console.WriteLine("\nAttempting to Register user on central server\n");
+    
+                HERE: try
                 {
-                Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
-                 //   int seqnum = Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
-                  //  Log.Show(_username, "Sequence number acquired: " + seqnum);
+                    Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
+                    Console.WriteLine("\nSuccesfully Registered\n");
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("EXCEPTION: " + e.Message);
+                    Console.WriteLine("\nEXCEPTION:" + e.Message);
                     goto HERE;
                 }
                // Helper.GetRandomServer(_servers).UnregisterUser(_username)
-     */
-                while (true)
+     
+            /*    while (true)
                 {
                     try
                     {
@@ -218,7 +217,7 @@ namespace Client
                     {
 
                     }
-                }
+                } */
                 _slotManager.Connect();
                 return true;
             }
@@ -234,6 +233,19 @@ namespace Client
                 _isOnline = false;
 
                 _slotManager.Disconnect();
+                Console.WriteLine("\nAttempting to Unregister user on central server\n");
+
+            HERE: try
+                {
+                    Helper.GetRandomServer(_servers).UnregisterUser(_username);
+                    Console.WriteLine("\nSuccesfully Unregistered\n");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("\nEXCEPTION: " + e.Message);
+                    goto HERE;
+                }
+
                 StopServices();
                 //Broadcast offline information to initiators of ongoing reservations
                 Log.Show(_username, "Client is disconnected.");
