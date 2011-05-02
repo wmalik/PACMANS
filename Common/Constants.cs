@@ -12,7 +12,7 @@ namespace Common
 
         public static string LOOKUP_SERVICE_NAME = "LOOKUP_SERVICE";
 
-        public static string SEQUENCE_NUMBER_SERVICE_NAME = "SEQUENCE_NUMBER_SERVICE";
+        public static string SYNCHRONIZATION_SERVICE_NAME = "SYNCHRONIZATION_SERVICE";
 
         public static string CONSISTENCY_SERVICE_NAME = "CONSISTENCY_SERVICE";
 

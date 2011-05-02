@@ -49,7 +49,7 @@ namespace Server
             ReadConfigurationFile(filename);
             action = new ServerAction(this._username);
             lookup = new ServerLookup(this._username, action, _servers);
-            facade = new ServerFacade(this._username, _port, action, lookup);
+            facade = new ServerFacade(this._username, _port, action, lookup, _servers);
         }
 
         public Server(string username, int port, string path, string configFile)
@@ -62,7 +62,7 @@ namespace Server
             ReadConfigurationFile();
             action = new ServerAction(_username);
             lookup = new ServerLookup(this._username, action, _servers);
-            facade = new ServerFacade(this._username, _port,  action, lookup);
+            facade = new ServerFacade(this._username, _port,  action, lookup, _servers);
 
         }
 
@@ -143,7 +143,7 @@ namespace Server
         {
             RegisterChannel();
             StartFacade();
-            StartLookupServices(); //Should be done by the Connect method
+            StartLookupServices();
             StartConsistencyService();
             initPMSObject();
             lookup.setPMS(pms); 

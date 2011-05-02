@@ -231,29 +231,20 @@ namespace Client
                 
                 _isOnline = true;
                 StartServices();
-                //Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
-                Helper.GetRandomServer(_servers).NextSequenceNumber();
-
-                //ILookupService ils = Helper.GetRandomServer(_servers);
-                //Log.Show(_username, "%%%%%%%%%%% ils was acquired succesfully");
-                //int seqnum = ils.NextSequenceNumber();  //Testing purpose. To be removed later.
-                //Log.Show(_username, "%%%%%%%%%%% seqnum was acquired succesfully");
-                
-                /*Log.Show(_username, "Sequence number acquired: " + seqnum);
-                Log.Show(_username, "Client is connected.");
-                ClientMetadata cmd = Helper.GetRandomServer(_servers).Lookup(_username); //REMOVEME
-                //pms.show("");
-                if (cmd == null)
+    //TODO:WASIF
+            HERE: try
                 {
-                    pms.show("Client: "+_username + " no such user registered.");
+                Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
+                 //   int seqnum = Helper.GetRandomServer(_servers).NextSequenceNumber();  //Testing purpose. To be removed later.
+                  //  Log.Show(_username, "Sequence number acquired: " + seqnum);
                 }
-                else
+                catch (Exception e)
                 {
-                    pms.show(cmd.IP_Addr + " is the ip of " + cmd.Username);
-                    //Helper.GetRandomServer(_servers).UnregisterUser(_username);
-
+                    Console.WriteLine("EXCEPTION: " + e.Message);
+                    goto HERE;
                 }
-                Helper.GetRandomServer(_servers).UnregisterUser(_username);*/
+               // Helper.GetRandomServer(_servers).UnregisterUser(_username);
+
                 return true;
             }
 
@@ -266,6 +257,7 @@ namespace Client
             if (_isOnline)
             {
                 _isOnline = false;
+               // Helper.GetRandomServer(_servers).UnregisterUser(_username);
                 StopServices();
                 //Broadcast offline information to initiators of ongoing reservations
                 Log.Show(_username, "Client is disconnected.");

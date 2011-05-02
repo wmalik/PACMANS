@@ -32,20 +32,20 @@ namespace Server
         }
 
         
-        public bool WriteSequenceNumber(int seqNum)
+        public bool WriteSequenceNumber(int seqNum, string username)
         {
             Monitor.Enter(this);
             try
             {
                 if (seqNum > _lastSeenSequenceNumber)
                 {
-                    Log.Show(_username, "[WRITE SEQ NUMBER] WriteSeqnum successful for sequence number: " + seqNum );
+                    Log.Show(_username, "[WRITE SEQ NUMBER] WriteSeqnum successful for sequence number: " + seqNum + "from SERVER:"+ username + " last seen sequence number: " + _lastSeenSequenceNumber);
                     _lastSeenSequenceNumber = seqNum;
                     return true;
                 }
                 else
                 {
-                    Log.Show(_username, "[WRITE SEQ NUMBER FAIL] WriteSeqnum failed for sequence number: " + seqNum + " last seen sequence number: " +_lastSeenSequenceNumber );
+                    Log.Show(_username, "[WRITE SEQ NUMBER FAIL] WriteSeqnum failed for sequence number: " + seqNum + "from SERVER:" + username + " last seen sequence number: " + _lastSeenSequenceNumber);
                     return false;
                 }
             }
@@ -89,8 +89,23 @@ namespace Server
 
         public bool UnregisterUser(string username)
         {
-            return _clients.Remove(username);
+            return (_clients.Remove(username));
+        }
+
+        public Dictionary<string, ClientMetadata> UpdateInfo()
+        {
+            return _clients;
+        }
+
+        public void setinfo(Dictionary<string, ClientMetadata> info)
+        {
+            _clients.Clear();
+            foreach ( KeyValuePair<string, ClientMetadata> pair in info )
+            {
+                _clients.Add(pair.Key, pair.Value);
+            }
         }
     }
+
 
 }

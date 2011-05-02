@@ -23,25 +23,96 @@ namespace Server
     {
         public delegate bool RemoteAsyncDelegate();
         public delegate ClientMetadata RemoteLookupDelegate();
+        public delegate Dictionary<string, ClientMetadata> RemoteUpdateDelegate();
         public bool _status;
-        public ClientMetadata data;
+        public int _serverFail;
+        public ClientMetadata data = new ClientMetadata();
+        public Dictionary<string, ClientMetadata> info;
         public ManualResetEvent waiter = new ManualResetEvent(false);
 
         // This is the call that the AsyncCallBack delegate will reference.
         public void OurRemoteAsyncCallBack(IAsyncResult ar)
         {
-            RemoteAsyncDelegate del = (RemoteAsyncDelegate)((AsyncResult)ar).AsyncDelegate;
-            _status = del.EndInvoke(ar);
-            waiter.Set();
-            return;
+            Monitor.Enter(this);
+            try
+            {
+
+                try
+                {
+                    RemoteAsyncDelegate del = (RemoteAsyncDelegate)((AsyncResult)ar).AsyncDelegate;
+                    _status = del.EndInvoke(ar);
+                    _serverFail = 2; //hack to handle server faults
+                    Console.WriteLine("\nSIGNALLED STATUS" + _status);
+                    waiter.Set();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Exception" + e.Message);
+                    _status = false;
+                    Console.WriteLine("\nFAILURE SIGNALLED STATUS" + _status);
+                    waiter.Set();
+                }
+                return;
+            }
+            finally
+            {
+                Monitor.Exit(this);
+            }
+
         }
 
         public void OurLookupAsyncCallBack(IAsyncResult ar)
         {
-            RemoteLookupDelegate del = (RemoteLookupDelegate)((AsyncResult)ar).AsyncDelegate;
-            data = del.EndInvoke(ar);
-            waiter.Set();
-            return;
+            Monitor.Enter(this);
+            try
+            {
+                try
+                {
+                    RemoteLookupDelegate del = (RemoteLookupDelegate)((AsyncResult)ar).AsyncDelegate;
+                    data = del.EndInvoke(ar);
+                    waiter.Set();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Exception" + e.Message);
+                    data = null;
+                    Console.WriteLine("\nFAILURE SIGNALLED STATUS" + _status);
+                    waiter.Set();
+                }
+
+                return;
+            }
+            finally
+            {
+                Monitor.Exit(this);
+            }
+        }
+
+
+        public void OurRemoteUpdateCallBack(IAsyncResult ar)
+        {
+            Monitor.Enter(this);
+            try
+            {
+
+                try
+                {
+                    RemoteUpdateDelegate del = (RemoteUpdateDelegate)((AsyncResult)ar).AsyncDelegate;
+                    info = new Dictionary<string,ClientMetadata> (del.EndInvoke(ar));
+                    Console.WriteLine("\nSIGNALLED STATUS" + _status);
+                    waiter.Set();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Exception" + e.Message);
+                }
+                return;
+            }
+            finally
+            {
+                Monitor.Exit(this);
+            }
+
         }
     }
 
@@ -100,22 +171,23 @@ namespace Server
             AsyncCallback RemoteCallbackOnRegister1 = new AsyncCallback(returnedValueOnRegister1.OurRemoteAsyncCallBack);
             IAsyncResult RemArForRegister1 = RemoteDelforRegister1.BeginInvoke(RemoteCallbackOnRegister1, null);
 
-            callback returnedValueOnRegister2 = new callback();
             callback.RemoteAsyncDelegate RemoteDelforRegister2 = new callback.RemoteAsyncDelegate(() => server[1].WriteClientMetadata(client));
-            AsyncCallback RemoteCallbackOnRegister2 = new AsyncCallback(returnedValueOnRegister2.OurRemoteAsyncCallBack);
-            IAsyncResult RemArForRegister2 = RemoteDelforRegister2.BeginInvoke(RemoteCallbackOnRegister2, null);
+            IAsyncResult RemArForRegister2 = RemoteDelforRegister2.BeginInvoke(RemoteCallbackOnRegister1, null);
 
             action.WriteClientMetadata(client); //First Self Register
 
             Log.Show(_username, "[REGISTER CLIENT] Waiting for atleast one Server to return");
 
             returnedValueOnRegister1.waiter.WaitOne();
+            returnedValueOnRegister1.waiter.Reset();
 
             if (returnedValueOnRegister1._status == false)
             {
                 Log.Show(_username, "[REGISTER CLIENT] One of the Servers failed to register");
-                returnedValueOnRegister2.waiter.WaitOne();
-                if (returnedValueOnRegister2._status == false)
+                returnedValueOnRegister1.waiter.WaitOne();
+                returnedValueOnRegister1.waiter.Reset();
+
+                if (returnedValueOnRegister1._status == false)
                 {
                     Log.Show(_username, "[REGISTER CLIENT] Both the Servers failed to register");
                     return false;
@@ -135,7 +207,7 @@ namespace Server
 
 
 
-        void ILookupService.UnregisterUser(string username)  //TODO: Yet to implement
+        void ILookupService.UnregisterUser(string username)
         {
             Monitor.Enter(this);
             try
@@ -144,12 +216,12 @@ namespace Server
                 if (status)
                 {
                     Log.Show(_username, "[UNREGISTER USER] " + "Unregistered client: " + username);
-                    pms.show("[UNREGISTER USER] " + _username + ": Unregistered client: " + username);
+                   // pms.show("[UNREGISTER USER] " + _username + ": Unregistered client: " + username);
                 }
                 else
                 {
                     Log.Show(_username, "[UNREGISTER USER] " + "No such entry exists: " + username);
-                    pms.show("[UNREGISTER USER] " + _username + "No such entry exists: " + username);
+                    //pms.show("[UNREGISTER USER] " + _username + "No such entry exists: " + username);
                 }
             }
             finally
@@ -167,7 +239,7 @@ namespace Server
                 server[i] = getOtherServers(_servers[i]);
             }
 
-            //Write  generated sequence number to ourself.
+           
             bool status = action.UnregisterUser(username);
             Log.Show(_username, "[UNREGISTER USER] Unregister user from self");
             if (status == false)
@@ -180,23 +252,22 @@ namespace Server
             AsyncCallback RemoteCallbackForUnregister1 = new AsyncCallback(returnedValueOnUnregister1.OurRemoteAsyncCallBack);
             IAsyncResult RemAr1ForUnregister = RemoteDelForUnregister1.BeginInvoke(RemoteCallbackForUnregister1, null);
 
-
-            callback returnedValueOnUnregister2 = new callback();
             callback.RemoteAsyncDelegate RemoteDelForUnregister2 = new callback.RemoteAsyncDelegate(() => server[1].UnregisterUser(username));
-            AsyncCallback RemoteCallbackForUnregister2 = new AsyncCallback(returnedValueOnUnregister2.OurRemoteAsyncCallBack);
-            IAsyncResult RemAr2ForUnregister = RemoteDelForUnregister2.BeginInvoke(RemoteCallbackForUnregister2, null);
+            IAsyncResult RemAr2ForUnregister = RemoteDelForUnregister2.BeginInvoke(RemoteCallbackForUnregister1, null);
 
 
             Log.Show(_username, "[UNREGISTER USER] Waiting for one Server to return");
             returnedValueOnUnregister1.waiter.WaitOne();
+            returnedValueOnUnregister1.waiter.Reset();
 
             if (returnedValueOnUnregister1._status == false)
             {
                 Log.Show(_username, "[UNREGISTER USER] One of the servers failed to unregister!!");
 
-                returnedValueOnUnregister2.waiter.WaitOne();
+                returnedValueOnUnregister1.waiter.WaitOne();
+                returnedValueOnUnregister1.waiter.Reset();
 
-                if (returnedValueOnUnregister2._status == false)
+                if (returnedValueOnUnregister1._status == false)
                 {
                     Log.Show(_username, "[UNREGISTER USER] Both the servers failed to unregister [WEIRD]");
                     return false;
@@ -243,18 +314,19 @@ namespace Server
             AsyncCallback RemoteCallbackOnLookup1 = new AsyncCallback(returnedValueOnLookup1.OurLookupAsyncCallBack);
             IAsyncResult RemArForLookup1 = RemoteDelforLookup1.BeginInvoke(RemoteCallbackOnLookup1, null);
 
-            callback returnedValueOnLookup2 = new callback();
             callback.RemoteLookupDelegate RemoteDelforLookup2 = new callback.RemoteLookupDelegate(() => server[1].ReadClientMetadata(username));
-            AsyncCallback RemoteCallbackOnLookup2 = new AsyncCallback(returnedValueOnLookup2.OurLookupAsyncCallBack);
-            IAsyncResult RemArForLookup2 = RemoteDelforLookup2.BeginInvoke(RemoteCallbackOnLookup2, null);
+            IAsyncResult RemArForLookup2 = RemoteDelforLookup2.BeginInvoke(RemoteCallbackOnLookup1, null);
 
             Log.Show(_username, "[READ METADATA] Waiting for one server to return");
             returnedValueOnLookup1.waiter.WaitOne();
+            returnedValueOnLookup1.waiter.Reset();
 
             //Compare the received value
             bool dataEqual;
             ClientMetadata myData = action.ReadClientMetadata(username);
-            dataEqual = CompareValues(myData, returnedValueOnLookup1.data);
+            ClientMetadata DataFromServer1 = returnedValueOnLookup1.data;
+            dataEqual = CompareValues(myData, DataFromServer1);
+
 
             if (dataEqual)
             {
@@ -264,8 +336,11 @@ namespace Server
 
             else
             {
-                returnedValueOnLookup2.waiter.WaitOne();
-                dataEqual = CompareValues(myData, returnedValueOnLookup2.data);
+                returnedValueOnLookup1.waiter.WaitOne();
+                returnedValueOnLookup1.waiter.Reset();
+
+                ClientMetadata DataFromServer2 = returnedValueOnLookup1.data;
+                dataEqual = CompareValues(myData, DataFromServer2);
                 if (dataEqual)
                 {
                     Log.Show(_username, "[READ METADATA] Second retreived value matches");
@@ -273,7 +348,7 @@ namespace Server
                 }
                 else
                 {
-                    dataEqual = CompareValues(returnedValueOnLookup1.data, returnedValueOnLookup2.data);
+                    dataEqual = CompareValues(DataFromServer1, DataFromServer1);
                     if (dataEqual)
                     {
                         Log.Show(_username, "[READ METADATA] I have an outdated value. Other two fetched values match");
@@ -283,7 +358,7 @@ namespace Server
                     }
                     else
                     {
-                        Log.Show(_username, "[READ METADATA]ERROR - ERROR");
+                        Log.Show(_username, "[READ METADATA]ERROR - ERROR"); //one tricky case possible here with failures
                         return null;
                     }
                 }
@@ -310,22 +385,21 @@ namespace Server
             Monitor.Enter(this);
             try
             {
-                WriteSequenceNumberOnOtherServers();  //to test client functionality, comment this line to generate sequence number from one server.
+                _sequenceNumber++; 
+                WriteSequenceNumberOnOtherServers(); 
+                Log.Show(_username, "[RETRIEVED SEQ NUMBER] Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
+               // if (pms != null)
+               //     pms.show(_username + " [RETRIEVED SEQ NUMBER] Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
+                return _sequenceNumber;
             }
             finally
             {
                 Monitor.Exit(this);
             }
-
-            Log.Show(_username, "[RETRIEVED SEQ NUMBER] Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
-            //if (pms != null)
-            //    pms.show(_username + " [RETRIEVED SEQ NUMBER] Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
-            return _sequenceNumber;
         }
 
         private void WriteSequenceNumberOnOtherServers()
         {
-            _sequenceNumber++; //increment sequence number and then try to acquire.
             IConsistencyService[] server = new IConsistencyService[_servers.Count];
             for (int i = 0; i < _servers.Count; i++)
             {
@@ -333,39 +407,49 @@ namespace Server
             }
 
             //Write  generated sequence number to ourself.
-            bool status = action.WriteSequenceNumber(_sequenceNumber);
+            TRYREWRITE:  bool status = action.WriteSequenceNumber(_sequenceNumber,_username);
             if (status == false)
             {
                 Log.Show(_username, "[SEQ NUMBER] Generated sequence number write to ourself failed: " + _sequenceNumber);
                 _sequenceNumber++;
-                WriteSequenceNumberOnOtherServers();
+                goto TRYREWRITE;
             }
 
             callback returnedValue1 = new callback();
-            callback.RemoteAsyncDelegate RemoteDel1 = new callback.RemoteAsyncDelegate(() => server[0].WriteSequenceNumber(_sequenceNumber));
-            AsyncCallback RemoteCallback1 = new AsyncCallback(returnedValue1.OurRemoteAsyncCallBack);
-            IAsyncResult RemAr1 = RemoteDel1.BeginInvoke(RemoteCallback1, null);
+            try
+            {
+                callback.RemoteAsyncDelegate RemoteDel1 = new callback.RemoteAsyncDelegate(() => server[0].WriteSequenceNumber(_sequenceNumber, _username));
+                AsyncCallback RemoteCallback1 = new AsyncCallback(returnedValue1.OurRemoteAsyncCallBack);
+                IAsyncResult RemAr1 = RemoteDel1.BeginInvoke(RemoteCallback1, null);
 
 
-            callback returnedValue2 = new callback();
-            callback.RemoteAsyncDelegate RemoteDel2 = new callback.RemoteAsyncDelegate(() => server[1].WriteSequenceNumber(_sequenceNumber));
-            AsyncCallback RemoteCallback2 = new AsyncCallback(returnedValue2.OurRemoteAsyncCallBack);
-            IAsyncResult RemAr2 = RemoteDel2.BeginInvoke(RemoteCallback2, null);
+                callback.RemoteAsyncDelegate RemoteDel2 = new callback.RemoteAsyncDelegate(() => server[1].WriteSequenceNumber(_sequenceNumber, _username));
+                IAsyncResult RemAr2 = RemoteDel2.BeginInvoke(RemoteCallback1, null);
+            }
+            catch (Exception e)
+            {
+                Log.Show(_username, "EXCEPTION: " + e.Message);
+            }
 
-
-            //  Log.Show(_username, "[SEQ NUMBER] Waiting for one Server to return");
+            Log.Show(_username, "WAITING HERE FOR FIRST SERVER");
             returnedValue1.waiter.WaitOne();
+            returnedValue1.waiter.Reset();
 
+        
             if (returnedValue1._status == false)
             {
                 Log.Show(_username, "[SEQ NUMBER] One of the Servers failed to set the sequence number: " + _sequenceNumber);
-                returnedValue2.waiter.WaitOne();
+                Log.Show(_username, "WAITING HERE FOR SECOND SERVER ASSUMING FIRST RETURNED FALSE");
+                returnedValue1.waiter.WaitOne();
+                returnedValue1.waiter.Reset();
 
-                if (returnedValue2._status == false)
+                Log.Show(_username, "STATUS" + returnedValue1._status);
+
+                if (returnedValue1._status == false )
                 {
                     Log.Show(_username, "[SEQ NUMBER] Both servers failed to set the sequence number: " + _sequenceNumber);
                     _sequenceNumber++;
-                    WriteSequenceNumberOnOtherServers(); // try until you get a sequence number.
+                     goto TRYREWRITE; // try until you get a sequence number.
                 }
                 else
                 {
@@ -375,6 +459,7 @@ namespace Server
             else
             {
                 Log.Show(_username, "[SEQ NUMBER] One of the servers successfully set the sequence number: " + _sequenceNumber);
+ 
             }
         }
 
@@ -390,6 +475,31 @@ namespace Server
                 connectionString);
 
             return server;
+        }
+
+        public void UpdateInfo()
+        {
+            IConsistencyService[] server = new IConsistencyService[_servers.Count];
+            for (int i = 0; i < _servers.Count; i++)
+            {
+                server[i] = getOtherServers(_servers[i]);
+            }
+
+            callback returnedValueOnUpdate = new callback();
+            callback.RemoteUpdateDelegate RemoteDelforUpdate1 = new callback.RemoteUpdateDelegate(server[0].UpdateInfo);
+            AsyncCallback RemoteCallbackOnUpdate = new AsyncCallback(returnedValueOnUpdate.OurRemoteUpdateCallBack);
+            IAsyncResult RemArForLookup1 = RemoteDelforUpdate1.BeginInvoke(RemoteCallbackOnUpdate, null);
+
+            callback.RemoteUpdateDelegate RemoteDelforUpdate2 = new callback.RemoteUpdateDelegate(server[1].UpdateInfo);
+            IAsyncResult RemArForLookup2 = RemoteDelforUpdate2.BeginInvoke(RemoteCallbackOnUpdate, null);
+
+            Log.Show(_username, "WAITING HERE FOR ONE SERVER");
+            returnedValueOnUpdate.waiter.WaitOne();
+            returnedValueOnUpdate.waiter.Reset();
+
+            action.setinfo(returnedValueOnUpdate.info);
+
+            return;
         }
     }
 }

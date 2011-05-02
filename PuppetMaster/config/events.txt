@@ -1,6 +1,6 @@
-connect central-1 127.0.0.1:50001
-connect central-2 127.0.0.1:50002
-connect central-3 127.0.0.1:50003
+connect central-1 127.0.0.1:1000
+connect central-2 127.0.0.1:1001
+connect central-3 127.0.0.1:1002
 connect wasif 127.0.0.1:6677
 connect navaneeth 127.0.0.1:6678
 connect paulo 127.0.0.1:6679

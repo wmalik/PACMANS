@@ -17,9 +17,12 @@ namespace Server.Services
 
         ClientMetadata ReadClientMetadata(string username);
 
-        bool WriteSequenceNumber(int seqNum);
+        bool WriteSequenceNumber(int seqNum, string username);
 
         bool UnregisterUser(string username);
 
+        Dictionary<string, ClientMetadata> UpdateInfo();
+
     }
+
 }

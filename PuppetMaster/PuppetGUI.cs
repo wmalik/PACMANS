@@ -308,7 +308,7 @@ namespace PuppetMaster
             {
                 ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
                 IClientFacade fs = (IClientFacade)pms.getClientFacadeList()[username];
-                fs.Connect();
+                fs.Connect(); //EXCEPTION UNHANDLED - WASIF CHECK THIS
                 show(username + " has been connected");
                 treeView1.SelectedNode.ImageIndex = 0;
                 treeView1.SelectedNode.SelectedImageIndex = 0;
@@ -478,7 +478,7 @@ namespace PuppetMaster
                             icf = (IClientFacade)pms.getClientFacadeList()[initiator];
                             Thread.Sleep(100);
                         }
-                        icf.CreateReservation(rr);
+                        icf.CreateReservation(rr); //WASIF - handle exception here.
                         Thread.Sleep(1000);
                         break;
                 }

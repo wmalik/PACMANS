@@ -25,14 +25,17 @@ namespace Server
         private int _port;
         ServerAction action;
         ServerLookup lookup;
+        List<ServerMetadata> _servers;
 
-        public ServerFacade(string username, int port, ServerAction action, ServerLookup lookup)
+        public ServerFacade(string username, int port, ServerAction action, ServerLookup lookup, List<ServerMetadata> _servers)
         {
             this._username = username;
             this.action = action;
             this.lookup = lookup;
             this._port = port;
+            this._servers = _servers;
             _isOnline = true;
+
         }
 
         public bool Connect()
@@ -42,6 +45,7 @@ namespace Server
                 _isOnline = true;
                 StartConsistencyService();
                 StartLookupServices();
+                Synchronize();
                 Log.Show(_username, "Server is connected.");
                 return true;
             }
@@ -69,6 +73,12 @@ namespace Server
             Helper.StopService(_username, "Consistency service", action);
         }
 
+        void Synchronize()
+        {
+            lookup.UpdateInfo();
+        }
+
+
         void StartConsistencyService()
         {
             string serviceName = _username + "/" + Common.Constants.CONSISTENCY_SERVICE_NAME;
@@ -81,6 +91,5 @@ namespace Server
             string serviceName = _username + "/" + Common.Constants.LOOKUP_SERVICE_NAME;
             Helper.StartService(_username, _port, serviceName, lookup, typeof(ILookupService));
         }
-
     }
 }
