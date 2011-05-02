@@ -6,13 +6,6 @@ namespace Common.Beans
     [Serializable]
     public class ReservationRequest
     {
-
-        public int ReservationID
-        {
-            get;
-            set;
-        }
-
         public string Description
         {
             get;

@@ -14,7 +14,7 @@ namespace Client.Services
     public interface IBookingService
     {
 
-        void InitReservation(ReservationRequest req, string initiatorID, string initiatorIP, int initiatorPort);
+        void InitReservation(ReservationRequest req, int resID, string initiatorID, string initiatorIP, int initiatorPort);
 
         void InitReservationReply(List<ReservationSlot> slots, string userID);
 
@@ -28,7 +28,13 @@ namespace Client.Services
 
         void DoCommit(int resId, int slotID);
 
+        void DoCommitReply(int resId, int slotID);
+
+        void Disconnected(int resId, string userID);
+
         void AbortReservation(int resId);
+
+        void FinishReservation(int resId);
 
     }
 

@@ -8,6 +8,8 @@ using Common.Slots;
 using Common.Beans;
 using Common.Util;
 using System.Net.Sockets;
+using System.Threading;
+using System.Runtime.Remoting;
 
 namespace Client
 {
@@ -18,18 +20,21 @@ namespace Client
 
         List<CalendarSlot> ReadCalendar();
 
-        void AbortOngoingReservations();
+        void Connect();
+
+        void Disconnect();
     }
+
+    // A delegate type for hooking up change notifications.
+    public delegate void ConnectedEventHandler(string userID, IBookingService stub);
+
+    // A delegate type for hooking up change notifications.
+    public delegate void DisconnectedEventHandler(int resID, string userID);
+
+    public delegate void InitiatorDelegate(int resID, int slotID, string userID, bool ack);
 
     public class SlotManager : MarshalByRefObject, IBookingService, ISlotManager
     {
-
-        public delegate void InitReservationDelegate(ReservationRequest req, string ID, string initiatorIP, int initiatorPort);
-
-        public delegate void ParticipantDelegate(int resID, int slotID);
-
-        public delegate void InitiatorDelegate(int resID, int slotID, string userID, bool ack);
-
         public delegate void AbortDelegate(int resID);
 
         private Dictionary<int, CalendarSlot> _calendar;
@@ -41,12 +46,16 @@ namespace Client
 
         private List<ServerMetadata> _servers;
 
+        private IClientMonitor _clientMonitor;
+        private IMessageDispatcher _msgDispatcher;
+
+        private Thread _monitorThread;
+
+        private DisconnectedEventHandler _disconnectInterested;
 
         public override object InitializeLifetimeService()
         {
-
             return null;
-
         }
 
         public SlotManager(string userName, int port, List<ServerMetadata> servers)
@@ -57,6 +66,10 @@ namespace Client
             _userName = userName;
             _port = port;
             _servers = servers;
+            _msgDispatcher = new MessageDispatcher(_userName);
+            _clientMonitor = new ClientMonitor(new ConnectedEventHandler(_msgDispatcher.ClientConnected), _userName, _servers);
+            _disconnectInterested = new DisconnectedEventHandler(_msgDispatcher.ClientDisconnected) + new DisconnectedEventHandler(_clientMonitor.Disconnected);
+            _monitorThread = null;
         }
 
         /*
@@ -66,14 +79,12 @@ namespace Client
         public bool StartReservation(ReservationRequest req)
         {
             //Updates request with sequence number
-            req.ReservationID = RetrieveSequenceNumber();
+            int resID = RetrieveSequenceNumber();
 
             //Create and populate local reservation
-            Reservation res = CreateReservation(req, _userName, Helper.GetIPAddress(), _port);
-            
-
+            Reservation res = CreateReservation(req, resID, _userName, Helper.GetIPAddress(), _port);
             //Mark slots initial states
-            List<ReservationSlot> reservationSlots = CreateReservationSlots(req);
+            List<ReservationSlot> reservationSlots = CreateReservationSlots(req, resID);
 
             //Update reservation request, removing aborted slots
             foreach (ReservationSlot slot in new List<ReservationSlot>(reservationSlots))
@@ -91,24 +102,23 @@ namespace Client
             Log.Show(_userName, "Starting reservation " + res.ReservationID + ". With participants " + string.Join(",", res.Participants) + ". Slots: " + string.Join(",", res.Slots));
 
             //If no slots are available, cancel reservation
-            if (req.Slots.Count == 0)
+            if (res.Slots.Count == 0)
             {
                 Log.Show(_userName, "No available slots on initiator, aborting reservation.");
                 return false;
             }
 
-            //just the initiator is on the participation
+            //just the initiator is on the reservation
             if (req.Users.Count == 1)
             {
-                bool assigned = false;
-
                 foreach (ReservationSlot slot in res.Slots)
                 {
-
-
-                    if(slot.State != ReservationSlotState.ABORTED && _calendar[slot.SlotID].State != CalendarSlotState.ASSIGNED){
+                    //GET LOCK HERE
+                    CalendarSlot cSlot = _calendar[slot.SlotID];
+                    if (slot.State != ReservationSlotState.ABORTED && !cSlot.Locked && cSlot.State != CalendarSlotState.ASSIGNED)
+                    {
                         AssignCalendarSlot(res, slot);
-                        assigned = true;
+                        //RELEASE LOCK HERE
                         return true;
                     }
                     else if (slot.State != ReservationSlotState.ABORTED)
@@ -117,77 +127,27 @@ namespace Client
                     }
                 }
 
-                if (!assigned)
-                {
-                    AbortReservation(res.ReservationID);
-                    return false;
-                }
-            }
+                //RELEASE LOCK HERE (finally)
 
-            //Retrieve user's metadata
-            List<ClientMetadata> onlineUsers = LookupUsers(req);
-
-            if (onlineUsers.Count != (req.Users.Count - 1))
-            {
-                //TODO: Monitor offline nodes
-                Log.Show(_userName, "Online users: " + onlineUsers.Count + ". Reservation users: " + req.Users.Count);
-                Log.Show(_userName, "FATAL: Not all participants are online, aborting reservation for now.");
+                //TODO check this
+                //AbortReservation(res.ReservationID);
                 return false;
             }
+
+            _clientMonitor.MonitorReservation(res);
 
             //Add reservation to map of active reservations
             _activeReservations[res.ReservationID] = res;
 
-            foreach (ClientMetadata clientMd in onlineUsers)
+            foreach (string participantID in res.Participants)
             {
-
-                String connectionString = "tcp://" + clientMd.IP_Addr + ":" + clientMd.Port + "/" + clientMd.Username + "/" + Common.Constants.BOOKING_SERVICE_NAME;
-
-                try
+                if (!participantID.Equals(_userName))
                 {
-                    IBookingService client = (IBookingService)Activator.GetObject(
-                                                                            typeof(ILookupService),
-                                                                            connectionString);
-                    res.ClientStubs.Add(client);
-
-                    InitReservationDelegate initRes = new InitReservationDelegate(client.InitReservation);
-                    IAsyncResult RemAr = initRes.BeginInvoke(req, res.InitiatorID, res.InitiatorIP, res.InitiatorPort, null, null);
-
-                }
-                catch (SocketException e)
-                {
-                    Log.Show(_userName, "ERROR: Could not connect to client: " + clientMd.Username + ". Exception: " + e);
-                    //TODO: do something?
+                    _msgDispatcher.SendMessage(MessageType.INIT_RESERVATION, resID, participantID, req, _userName, Helper.GetIPAddress(), _port);
                 }
             }
 
             return true;
-        }
-
-        private List<ClientMetadata> LookupUsers(ReservationRequest req)
-        {
-            List<ClientMetadata> onlineUsers = new List<ClientMetadata>();
-            ILookupService server = Helper.GetRandomServer(_servers);
-            for (int i = 0; i < req.Users.Count; i++)
-            {
-                string userID = req.Users[i];
-                if (!userID.Equals(_userName))
-                {
-                    try
-                    {
-                        ClientMetadata participantInfo = server.Lookup(userID);
-                        onlineUsers.Add(participantInfo);
-                    }
-                    catch (SocketException)
-                    {
-                        //server has failed
-                        //update server reference and decrease loop counter
-                        server = Helper.GetRandomServer(_servers);
-                        i--;
-                    }
-                }
-            }
-            return onlineUsers;
         }
 
         public List<CalendarSlot> ReadCalendar()
@@ -195,18 +155,30 @@ namespace Client
             return _calendar.Values.ToList();
         }
 
+        public void Connect()
+        {
+            _monitorThread = new Thread(new ThreadStart(_clientMonitor.StartMonitoring));
+            _monitorThread.Start();
+        }
 
-        public void AbortOngoingReservations(){
 
+        public void Disconnect()
+        {
+            _monitorThread.Abort();
+            _monitorThread = null;
             foreach (Reservation res in new List<Reservation>(_activeReservations.Values))
             {
-                if (_userName.Equals(res.InitiatorID))
+                foreach (KeyValuePair<string, IBookingService> tuple in res.ClientStubs)
                 {
-                    AbortReservation(res.ReservationID);
-                }
-                else
-                {
-                    res.InitiatorStub.AbortReservation(res.ReservationID);
+                    try
+                    {
+                        tuple.Value.Disconnected(res.ReservationID, _userName);
+                        Log.Debug(_userName, "Sent disconnect message to " + tuple.Key + " of active reservation " + res.ReservationID);
+                    }
+                    catch (RemotingException)
+                    {
+                        Log.Debug(_userName, "Failure when sending disconnect message to " + tuple.Key + " of active reservation " + res.ReservationID + ". Node probably disconnected.");
+                    }
                 }
             }
         }
@@ -297,13 +269,13 @@ namespace Client
          * BOOKING SERVICE PATICIPANT
          */
 
-        void IBookingService.InitReservation(ReservationRequest req, string initiatorID, string initiatorIP, int initiatorPort)
+        void IBookingService.InitReservation(ReservationRequest req, int resID, string initiatorID, string initiatorIP, int initiatorPort)
         {
             //Create and populate local reservation
-            Reservation res = CreateReservation(req, _userName, initiatorIP, initiatorPort);
+            Reservation res = CreateReservation(req, resID, _userName, initiatorIP, initiatorPort);
 
             //Mark slots initial states
-            res.Slots = CreateReservationSlots(req);
+            res.Slots = CreateReservationSlots(req, resID);
 
             Log.Show(_userName, "Initializing reservation " + res.ReservationID + ". Initiator: " + res.InitiatorID + ". Slots: " + string.Join(", ", res.Slots));
 
@@ -372,7 +344,7 @@ namespace Client
             CalendarSlot calendarSlot = _calendar[slotID];
 
             //if slot is already booked and resID is bigger than ID holding lock, add this request to queue
-            if (calendarSlot.Locked || (calendarSlot.State == CalendarSlotState.BOOKED && resID > calendarSlot.ReservationID))
+            if (calendarSlot.State == CalendarSlotState.BOOKED && resID > calendarSlot.ReservationID)
             {
                 calendarSlot.WaitingBook.Remove(slotID);
                 Log.Show(_userName, "Book request for slot " + slotID + " of  reservation " + resID + " was enqueued. Higher priority request " + calendarSlot.ReservationID + " already booked.");
@@ -380,7 +352,7 @@ namespace Client
                 return;
             }
 
-            bool ack = calendarSlot.State != CalendarSlotState.ASSIGNED;
+            bool ack = !calendarSlot.Locked && calendarSlot.State != CalendarSlotState.ASSIGNED;
 
             if (ack)
             {
@@ -468,7 +440,18 @@ namespace Client
             //RELEASE LOCK HERE
         }
 
-        public void AbortReservation(int resID)
+        void IBookingService.DoCommitReply(int resId, int slotID)
+        {
+            throw new NotImplementedException();
+        }
+
+        void IBookingService.Disconnected(int resId, string userID)
+        {
+            Log.Show(_userName, "Participant " + userID + " from reservartion " + resId + " disconnected. Notifying client monitor.");
+            _disconnectInterested.Invoke(resId, userID);
+        }
+
+        void IBookingService.AbortReservation(int resID)
         {
             //TODO VERIFY RACE CONDITIONS ON _activeReservations. MONITORS MAY BE NEEDED
 
@@ -490,22 +473,23 @@ namespace Client
                 return;
             }
 
-            if (_userName == res.InitiatorID) {
-                //I am the initiator, someone has disconnected in the middle of a reservation, tell the others
-                foreach (IBookingService client in res.ClientStubs)
-                {
-                    try
-                    {
-                        AbortDelegate abortRes = new AbortDelegate(client.AbortReservation);
-                        IAsyncResult RemAr = abortRes.BeginInvoke(resID, null, null);
-                    }
-                    catch (SocketException e)
-                    {
-                        Log.Show(_userName, "ERROR: Could not connect to client. Exception: " + e);
-                        //TODO: do something
-                    }
-                }
-            }
+            //if (_userName == res.InitiatorID)
+            //{
+            //    //I am the initiator, someone has disconnected in the middle of a reservation, tell the others
+            //    foreach (IBookingService client in res.ClientStubs.Values)
+            //    {
+            //        try
+            //        {
+            //            AbortDelegate abortRes = new AbortDelegate(client.AbortReservation);
+            //            IAsyncResult RemAr = abortRes.BeginInvoke(resID, null, null);
+            //        }
+            //        catch (SocketException e)
+            //        {
+            //            Log.Show(_userName, "ERROR: Could not connect to client. Exception: " + e);
+            //            //TODO: do something
+            //        }
+            //    }
+            //}
 
 
             foreach (ReservationSlot slot in res.Slots)
@@ -528,6 +512,11 @@ namespace Client
         }
 
 
+        public void FinishReservation(int resId)
+        {
+            throw new NotImplementedException();
+        }
+
         /*
          * AUX METHODS
          */
@@ -540,7 +529,8 @@ namespace Client
 
             foreach (ReservationSlot slot in res.Slots)
             {
-                if (slot.State != ReservationSlotState.ABORTED && _calendar[slot.SlotID].State != CalendarSlotState.ASSIGNED)
+                CalendarSlot cSlot = _calendar[slot.SlotID];
+                if (slot.State != ReservationSlotState.ABORTED && !cSlot.Locked && cSlot.State != CalendarSlotState.ASSIGNED)
                 {
                     booked = true;
 
@@ -550,19 +540,14 @@ namespace Client
 
                     Log.Show(_userName, "Starting book process of slot " + slot.SlotID + " from reservation " + res.ReservationID);
 
-                    foreach (IBookingService client in res.ClientStubs)
+                    foreach (string participantID in res.Participants)
                     {
-                        try
+                        if (!participantID.Equals(_userName))
                         {
-                            ParticipantDelegate bookSlot = new ParticipantDelegate(client.BookSlot);
-                            IAsyncResult RemAr = bookSlot.BeginInvoke(res.ReservationID, slot.SlotID, null, null);
-                        }
-                        catch (SocketException e)
-                        {
-                            Log.Show(_userName, "ERROR: Could not connect to client. Exception: " + e);
-                            //TODO: do something
+                            _msgDispatcher.SendMessage(MessageType.BOOK_SLOT, res.ReservationID, participantID, slot.SlotID);
                         }
                     }
+
                     break;
                 }
             }
@@ -573,7 +558,7 @@ namespace Client
 
                 Log.Show(_userName, "No available slots. Aborting reservation " + res.ReservationID);
 
-                foreach (IBookingService client in res.ClientStubs)
+                foreach (IBookingService client in res.ClientStubs.Values)
                 {
                     try
                     {
@@ -618,17 +603,11 @@ namespace Client
 
                     //RELEASE LOCK HERE
 
-                    foreach (IBookingService client in res.ClientStubs)
+                    foreach (string participantID in res.Participants)
                     {
-                        try
+                        if (!participantID.Equals(_userName))
                         {
-                            ParticipantDelegate preCommitSlot = new ParticipantDelegate(client.PrepareCommit);
-                            IAsyncResult RemAr = preCommitSlot.BeginInvoke(res.ReservationID, slot.SlotID, null, null);
-                        }
-                        catch (SocketException e)
-                        {
-                            Log.Show(_userName, "ERROR: Could not connect to client. Exception: " + e);
-                            //TODO: do something
+                            _msgDispatcher.SendMessage(MessageType.PRE_COMMIT, res.ReservationID, participantID, slot.SlotID);
                         }
                     }
                 }
@@ -665,17 +644,11 @@ namespace Client
 
                     //RELEASE LOCK HERE
 
-                    foreach (IBookingService client in res.ClientStubs)
+                    foreach (string participantID in res.Participants)
                     {
-                        try
+                        if (!participantID.Equals(_userName))
                         {
-                            ParticipantDelegate doCommitSlot = new ParticipantDelegate(client.DoCommit);
-                            IAsyncResult RemAr = doCommitSlot.BeginInvoke(res.ReservationID, slot.SlotID, null, null);
-                        }
-                        catch (SocketException e)
-                        {
-                            Log.Show(_userName, "ERROR: Could not connect to client. Exception: " + e);
-                            //TODO: do something
+                            _msgDispatcher.SendMessage(MessageType.DO_COMMIT, res.ReservationID, participantID, slot.SlotID);
                         }
                     }
 
@@ -701,6 +674,13 @@ namespace Client
 
             //IF NOT LOCKED GET LOCK HERE
 
+            FreeCalendarSlot(slot);
+
+            //IF NOT LOCKED RELEASE LOCK HERE
+        }
+
+        private void FreeCalendarSlot(ReservationSlot slot)
+        {
             CalendarSlot cSlot = _calendar[slot.SlotID];
 
             cSlot.WaitingBook.Remove(slot.ReservationID);
@@ -709,6 +689,7 @@ namespace Client
             if (cSlot.State == CalendarSlotState.ACKNOWLEDGED && cSlot.WaitingBook.Count == 0)
             {
                 cSlot.State = CalendarSlotState.FREE;
+                //_calendar.Remove(slot.SlotID); - Could remove, but will influence on BOOKNEXTSLOT, so setting it FREE for now
             }
             else if (cSlot.State == CalendarSlotState.BOOKED && cSlot.ReservationID == slot.ReservationID)
             {
@@ -735,8 +716,6 @@ namespace Client
                     }
                 }
             }
-
-            //IF NOT LOCKED RELEASE LOCK HERE
         }
 
         /*
@@ -777,6 +756,7 @@ namespace Client
             //Remove from list of active reservations
             _activeReservations.Remove(res.ReservationID);
             _committedReservations[res.ReservationID] = res;
+            _clientMonitor.RemoveReservation(res.ReservationID);
 
             //TODO: SEND ASYNCHRONOUS NACK TO ALL PENDING RESERVATIONS ON THE QUEUE
             foreach (int resID in new List<int>(calendarSlot.BookQueue))
@@ -800,7 +780,7 @@ namespace Client
         }
 
         //Verify calendar slots and create reservation states
-        private List<ReservationSlot> CreateReservationSlots(ReservationRequest req)
+        private List<ReservationSlot> CreateReservationSlots(ReservationRequest req, int resID)
         {
             List<ReservationSlot> reservationSlots = new List<ReservationSlot>();
 
@@ -824,13 +804,13 @@ namespace Client
                     calendarSlot = new CalendarSlot();
                     calendarSlot.SlotNum = slot;
                     calendarSlot.State = CalendarSlotState.ACKNOWLEDGED;
-                    calendarSlot.WaitingBook.Add(req.ReservationID);
+                    calendarSlot.WaitingBook.Add(resID);
 
                     _calendar[slot] = calendarSlot;
                     Log.Debug(_userName, "Creating new calendar entry. Slot: " + calendarSlot.SlotNum + ". State: " + calendarSlot.State);
                 }
 
-                ReservationSlot rs = new ReservationSlot(req.ReservationID, slot, state);
+                ReservationSlot rs = new ReservationSlot(resID, slot, state);
                 reservationSlots.Add(rs);
             }
 
@@ -862,7 +842,7 @@ namespace Client
             {
                 if (rSlot.State == ReservationSlotState.ABORTED)
                 {
-                    GetSlot(reservation, rSlot.SlotID).State = ReservationSlotState.ABORTED;
+                    AbortReservationSlot(GetSlot(reservation, rSlot.SlotID), false);
                 } //if
             } //foreach
 
@@ -921,16 +901,16 @@ namespace Client
             return null;
         }
 
-        private Reservation CreateReservation(ReservationRequest req, string initiatorID, string initiatorIP, int initiatorPort)
+        private Reservation CreateReservation(ReservationRequest req, int resID, string initiatorID, string initiatorIP, int initiatorPort)
         {
             Reservation thisRes = new Reservation();
-            thisRes.ReservationID = req.ReservationID;
+            thisRes.ReservationID = resID;
             thisRes.Description = req.Description;
             thisRes.Participants = req.Users;
             thisRes.InitiatorID = initiatorID;
             thisRes.InitiatorIP = initiatorIP;
             thisRes.InitiatorPort = initiatorPort;
-            
+
 
             return thisRes;
         }

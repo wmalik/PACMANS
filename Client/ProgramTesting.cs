@@ -10,39 +10,29 @@ using System.Reflection;
 
 namespace Client
 {
-    class Program
+    class ProgramTesting
     {
         static void Main(string[] args)
         {
-          
-            string username = args[0];
-            int port = Convert.ToInt32(args[1]);
-            string path = Path.GetDirectoryName(Assembly.GetAssembly(typeof(Program)).CodeBase)+"\\";
-            Console.WriteLine(username+" "+port);
-            
-            IClient client = new Client(username, port, path, "conf/Client.xml");
-            Thread thread = new Thread(client.Init);
-            thread.Start();
-            
-            /*
-            
-            IClient client1 = new Client("conf/Client1.xml");
+            string path = Path.GetDirectoryName(Assembly.GetAssembly(typeof(ProgramTesting)).CodeBase) + "\\";
+
+            IClient client1 = new Client("test1", 4000, path, "conf/Client.xml");
             Thread t1 = new Thread(client1.Init);
             t1.Start();
 
             Thread.Sleep(1000);
 
-
-            IClient client2 = new Client("conf/Client2.xml");
+            IClient client2 = new Client("test2", 4001, path, "conf/Client.xml");
             Thread t2 = new Thread(client2.Init);
             t2.Start();
 
             Thread.Sleep(1000);
 
-            IClient client3 = new Client("conf/Client3.xml");
+            IClient client3 = new Client("test3", 4002, path, "conf/Client.xml");
             Thread t3 = new Thread(client3.Init);
             t3.Start();
 
+            /*
             Thread.Sleep(1000);
 
             IClient client4 = new Client("conf/Client4.xml");
@@ -55,7 +45,6 @@ namespace Client
             Thread t5 = new Thread(client5.Init);
             t5.Start();
              */
-
         }
     }
 }
