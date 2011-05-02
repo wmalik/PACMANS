@@ -148,7 +148,8 @@ namespace Server
             initPMSObject();
             lookup.setPMS(pms); 
             NotifyPuppetMaster();
-            
+
+            System.Console.ReadLine();
         }
 
         private void RegisterChannel()
@@ -205,7 +206,6 @@ namespace Server
                 Log.Show(_username, "Trying to register to Puppet Master on: " + connectionString);
                 pms.registerServer(_username, Helper.GetIPAddress(), _port);
                 Log.Show(_username, "Sucessfully registered server on Pupper Master.");
-                System.Console.ReadLine();
             }
             catch (SocketException)
             {
