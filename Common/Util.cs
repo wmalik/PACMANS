@@ -35,29 +35,31 @@ namespace Common.Util
 
         public static ILookupService GetRandomServer(List<ServerMetadata> servers)
         {
-
-            //TODO current implementation just get first server from list
-            //int server_num=0;
-            //ServerMetadata chosenServer = servers[(server_num++)%3];
             ILookupService server = null;
             String connectionString="";
-            ServerMetadata chosenServer = servers[0]; //this line is to make C# happy 
+            ServerMetadata chosenServer = null;
 
             while (server == null)
             {
                 int server_num = new Random().Next(0, 3);
 
-                chosenServer= servers[server_num];
+                chosenServer = servers[server_num];
 
                 connectionString = "tcp://" + chosenServer.IP_Addr + ":" + chosenServer.Port + "/" + chosenServer.Username + "/" + Common.Constants.LOOKUP_SERVICE_NAME;
 
-                server = (ILookupService)Activator.GetObject(
-                    typeof(ILookupService),
-                    connectionString);
-                Thread.Sleep(100);
+                try
+                {
+                    server = (ILookupService)Activator.GetObject(
+                    typeof(ILookupService), connectionString);
+                }
+                catch (Exception)
+                {
+                    Log.Debug("Common", "Could not contact server, retrying in 100ms");
+                }
 
+                Thread.Sleep(100);
             }
-            Console.WriteLine("Random server to contact is: "+chosenServer.Username);
+            Console.WriteLine("Random server to contact is: " + connectionString);
             return server;
         }
 
@@ -80,7 +82,7 @@ namespace Common.Util
     public static class Log
     {
 
-        static bool debug = false;
+        static bool debug = true;
 
         public static void Show(string username, string msg)
         {

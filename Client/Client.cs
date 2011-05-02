@@ -54,14 +54,8 @@ namespace Client
         /*Deprecated*/
         public Client(string filename)
         {
-            ReadConfigurationFile(filename);
-            _isOnline = false;
-            _slotManager = new SlotManager(_username, _port, _servers);
-            _logfile = new StreamWriter(_path + "log\\log_client_" + _username + ".txt", true);
-            _logfile.WriteLine("-");
-            _logfile.AutoFlush = true;
-        }
 
+        }
 
         public Client(string username, int port, string path, string configFile)
         {
@@ -76,40 +70,6 @@ namespace Client
             _logfile = new StreamWriter(logpath, true);
             _logfile.WriteLine("-");
             _logfile.AutoFlush = true;
-        }
-
-        /*Deprecated*/
-        private void ReadConfigurationFile(string filename)
-        {
-            string current_dir = System.IO.Directory.GetCurrentDirectory();
-            XmlDocument xmlDoc = new XmlDocument(); //* create an xml document object.
-            xmlDoc.Load(filename); //* load the XML document from the specified file.
-
-            XmlNodeList usernamelist = xmlDoc.GetElementsByTagName("Username");
-            XmlNodeList portlist = xmlDoc.GetElementsByTagName("Port");
-            XmlNodeList puppetmasteriplist = xmlDoc.GetElementsByTagName("PuppetMasterIP");
-            XmlNodeList puppetmasterportlist = xmlDoc.GetElementsByTagName("PuppetMasterPort");
-            XmlNodeList serverslist = xmlDoc.GetElementsByTagName("Server");
-
-            _username = usernamelist[0].InnerText;
-            _port = Convert.ToInt32(portlist[0].InnerText);
-            _puppetIP = puppetmasteriplist[0].InnerText;
-            _puppetPort = Convert.ToInt32(puppetmasterportlist[0].InnerText);
-            _servers = new List<ServerMetadata>();
-
-            for (int i = 0; i < 1; i++)
-            {
-                //TODO: currently just reading first server
-                XmlNodeList server_ipportlist = serverslist[i].ChildNodes;
-                string id = server_ipportlist[0].InnerText;
-                string ip_addr = server_ipportlist[1].InnerText;
-                int port = Convert.ToInt32(server_ipportlist[2].InnerText);
-                ServerMetadata sm = new ServerMetadata();
-                sm.Username = id;
-                sm.IP_Addr = ip_addr;
-                sm.Port = port;
-                _servers.Add(sm);
-            }
         }
 
         /*Please use this method for reading the conf file*/
@@ -150,9 +110,13 @@ namespace Client
         {
             RegisterChannel();
             StartFacade();
-            initPMSObject();
+
             Connect();
+
+            initPMSObject();
             NotifyPuppetMaster();
+
+            System.Console.ReadLine();
         }
 
         private void initPMSObject()
@@ -162,7 +126,6 @@ namespace Client
             pms = (PuppetMasterService)Activator.GetObject(
                 typeof(PuppetMasterService),
                 connectionString);
-
         }
 
         private void RegisterChannel()
@@ -207,8 +170,6 @@ namespace Client
                 pms.registerClient(_username, Helper.GetIPAddress(), _port);
                 Log.Show(_username, "Sucessfully registered client on Puppet Master.");
                 Log.WriteToFile(_logfile, _username, "Sucessfully registered client on Puppet Master.");
-
-                System.Console.ReadLine();
             }
             catch (SocketException)
             {
@@ -223,7 +184,7 @@ namespace Client
          * Implements IFacadeService
          */
 
-        public bool Connect() //TODO: Just to test the server. Change it to IclientFacde.Connect() later.
+        public bool Connect()
         {
 
             if (!_isOnline)
@@ -231,7 +192,8 @@ namespace Client
                 
                 _isOnline = true;
                 StartServices();
-    //TODO:WASIF
+
+    /*
             HERE: try
                 {
                 Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
@@ -243,8 +205,21 @@ namespace Client
                     Console.WriteLine("EXCEPTION: " + e.Message);
                     goto HERE;
                 }
-               // Helper.GetRandomServer(_servers).UnregisterUser(_username);
+               // Helper.GetRandomServer(_servers).UnregisterUser(_username)
+     */
+                while (true)
+                {
+                    try
+                    {
+                        Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
+                        break;
+                    }
+                    catch (SocketException)
+                    {
 
+                    }
+                }
+                _slotManager.Connect();
                 return true;
             }
 
@@ -257,7 +232,8 @@ namespace Client
             if (_isOnline)
             {
                 _isOnline = false;
-               // Helper.GetRandomServer(_servers).UnregisterUser(_username);
+
+                _slotManager.Disconnect();
                 StopServices();
                 //Broadcast offline information to initiators of ongoing reservations
                 Log.Show(_username, "Client is disconnected.");

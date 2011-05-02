@@ -11,7 +11,7 @@ namespace Client
 
         public Reservation()
         {
-            this.ClientStubs = new List<IBookingService>();
+            this.ClientStubs = new Dictionary<string, IBookingService>();
             this.Replied = new List<string>();
             this.Aborted = false;
         }
@@ -66,7 +66,7 @@ namespace Client
             set;
         }
 
-        public List<IBookingService> ClientStubs
+        public Dictionary<string, IBookingService> ClientStubs
         {
             get;
             set;

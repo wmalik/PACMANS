@@ -3,4 +3,7 @@ connect central-2 127.0.0.1:1001
 connect central-3 127.0.0.1:1002
 connect user1 127.0.0.1:2001
 connect user2 127.0.0.1:2002
-
+reservation {GroupMeeting; user1, user2; 13, 25 }
+disconnect user2 127.0.0.1:2002
+connect user2 127.0.0.1:2003
+readCalendar user1 127.0.0.1:2001
