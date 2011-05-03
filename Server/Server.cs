@@ -43,6 +43,13 @@ namespace Server
         PuppetMasterService pms;
         String connectionString;
 
+        public override object InitializeLifetimeService()
+        {
+
+            return null;
+
+        }
+
         public Server(string filename)
         {
             _servers = new List<ServerMetadata>();

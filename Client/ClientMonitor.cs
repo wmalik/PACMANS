@@ -147,7 +147,7 @@ namespace Client
                     clientMd = _activeServer.Lookup(userID);
                     contacted = true;
                 }
-                catch (SocketException)
+                catch (Exception)
                 {
                     //server has failed
                     //update server reference

@@ -861,8 +861,9 @@ namespace Client
                 {
                     seqNumber = Helper.GetRandomServer(_servers).NextSequenceNumber();
                 }
-                catch (SocketException)
+                catch (Exception)
                 {
+                    Console.WriteLine("\nCaught Exception Here!!\n");
                     //server has failed
                     //will try to get another server in next iteration
                 }

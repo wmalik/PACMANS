@@ -24,6 +24,14 @@ namespace Server
         private string _username;
         private Dictionary<string, ClientMetadata> _clients;
 
+
+        public override object InitializeLifetimeService()
+        {
+
+            return null;
+
+        }
+
         public ServerAction(string _username)
         {
             this._username = _username;

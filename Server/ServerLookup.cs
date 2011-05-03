@@ -122,6 +122,13 @@ namespace Server
         int _sequenceNumber;
         PuppetMasterService pms;
 
+        public override object InitializeLifetimeService()
+        {
+
+            return null;
+
+        }
+
         public ServerLookup(string username, ServerAction action, List<ServerMetadata> _servers)
         {
             this._username = username;

@@ -27,6 +27,13 @@ namespace Server
         ServerLookup lookup;
         List<ServerMetadata> _servers;
 
+        public override object InitializeLifetimeService()
+        {
+
+            return null;
+
+        }
+
         public ServerFacade(string username, int port, ServerAction action, ServerLookup lookup, List<ServerMetadata> _servers)
         {
             this._username = username;
