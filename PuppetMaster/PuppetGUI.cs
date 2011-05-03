@@ -35,6 +35,7 @@ namespace PuppetMaster
         string invisible_windows = "";
         PuppetMasterService pms;
         OpenFileDialog openFileDialog1;
+        List<Process> processes = new List<Process>();
 
         public PuppetGUI()
         {
@@ -269,8 +270,8 @@ namespace PuppetMaster
                 ClientMetadata cm = (ClientMetadata)pms.getClientsList()[username];
                 IClientFacade fs = (IClientFacade)pms.getClientFacadeList()[username];
                 List<CalendarSlot> calendar = fs.ReadCalendar();
-                 
-                show("Calendar for "+username+": "+string.Join(",", calendar));
+
+                show("Calendar for " + username + ": " + string.Join(",", calendar));
 
             }
             else
@@ -354,6 +355,7 @@ namespace PuppetMaster
                 string opcode = line.Split(' ')[0];
                 string username;
                 IClientFacade icf;
+                IServerFacade sf;
                 List<CalendarSlot> clientCalendar;
                 //TODO: fetch initiator from Users list
 
@@ -370,10 +372,10 @@ namespace PuppetMaster
                             {
                                 show("Trying to disconnect server: " + username);
                                 isf = (IServerFacade)pms.getServerFacadeList()[username];
-                                Thread.Sleep(1000);
+                                Thread.Sleep(100);
                             }
 
-                            isf.Disconnect(); /*Server Facade not implemented yet*/
+                            isf.Disconnect();
                             changeIconToDisconnected(username, null);
                             show("Server disconnected. TODO: call server facade");
                         }
@@ -395,16 +397,24 @@ namespace PuppetMaster
 
                     case "connect":
 
-                        username = line.Split(' ')[1];
-                        string ip = line.Split(' ')[2].Split(':')[0];
+                        username = line.Split(' ')[1].Trim();
+                        string ip = line.Split(' ')[2].Split(':')[0].Trim();
                         int port = Convert.ToInt32(line.Split(' ')[2].Split(':')[1]);
 
                         icf = (IClientFacade)pms.getClientFacadeList()[username];
+                        sf = (IServerFacade)pms.getServerFacadeList()[username];
 
                         if (icf != null) //means the client has already been created
                         {
                             show("Trying to reconnect to client: " + username);
                             icf.Connect();
+                            changeIconToConnected(username, null);
+                        }
+
+                        else if (sf != null)
+                        {
+                            show("Reconnecting to server: " + username);
+                            sf.Connect();
                             changeIconToConnected(username, null);
                         }
                         else //means a new process needs to be started
@@ -415,9 +425,15 @@ namespace PuppetMaster
                                 string path = server_dir;
                                 ProcessStartInfo startInfo = new ProcessStartInfo();
 
+
                                 startInfo.FileName = path + "Server.exe";
                                 startInfo.Arguments = username + " " + port;
-                                Process.Start(startInfo);
+                                Process process = new Process();
+                                process.StartInfo = startInfo;
+                                process.Start();
+                                processes.Add(process);
+
+
                                 //TODO: save the PIDS of all processes and kill them on exit
 
                                 //if server  is online, we move on to the next event. If not, we wait until the server is online
@@ -436,7 +452,10 @@ namespace PuppetMaster
 
                                 startInfo.FileName = path + "Client.exe";
                                 startInfo.Arguments = username + " " + port;
-                                Process.Start(startInfo);
+                                Process process = new Process();
+                                process.StartInfo = startInfo;
+                                process.Start();
+                                processes.Add(process);
 
                                 //if client  is online, we move on to the next event. If not, we wait until the client is online
                                 IClientFacade cf = (IClientFacade)pms.getClientFacadeList()[username];
@@ -445,7 +464,7 @@ namespace PuppetMaster
                                     Thread.Sleep(500);
                                     cf = (IClientFacade)pms.getClientFacadeList()[username];
                                 }
-                                
+
 
                             }
                         }
@@ -462,10 +481,10 @@ namespace PuppetMaster
                     case "reservation":
                         //reservation {GroupMeeting; user1, user2; 13, 25 }
                         string data = line.Split('{')[1].Split('}')[0].Trim();
-                        string desc = data.Split(';')[0];
+                        string desc = data.Split(';')[0].Trim();
                         string initiator = data.Split(';')[1].Split(',')[0].Trim();
-                        List<string> usersList = data.Split(';')[1].Trim().Split(',').ToList<string>();
-                        List<int> slotsList = data.Split(';')[2].Trim().Split(',').ToList<string>().ConvertAll<int>(Convert.ToInt32);
+                        List<string> usersList = data.Split(';')[1].Trim().Split(',').Select(s => s.Trim()).ToList<string>();
+                        List<int> slotsList = data.Split(';')[2].Trim().Split(',').Select(s => s.Trim()).ToList<string>().ConvertAll<int>(Convert.ToInt32);
 
                         ReservationRequest rr = new ReservationRequest();
                         rr.Description = desc;
@@ -474,12 +493,37 @@ namespace PuppetMaster
                         icf = (IClientFacade)pms.getClientFacadeList()[initiator];
                         while (icf == null)
                         {
-                            show("Trying to reconnect to initiator: "+initiator);
+                            show("Trying to reconnect to initiator: " + initiator);
                             icf = (IClientFacade)pms.getClientFacadeList()[initiator];
                             Thread.Sleep(100);
                         }
-                        icf.CreateReservation(rr); //WASIF - handle exception here.
+                        icf.CreateReservation(rr); //WASIF - handle exception here. (Navaneeth - You have handled it already)
+
                         Thread.Sleep(1000);
+                        break;
+
+                    case "wait":
+                        int seconds = Convert.ToInt32(line.Split(' ')[1].Trim());
+                        show("Sleeping for " + seconds + " second(s)");
+                        Thread.Sleep(seconds * 1000);
+                        break;
+
+                    case "shutdown":
+                        show("Shutting down all processes in 3 seconds");
+                        Thread.Sleep(3000);
+                        //cleaning up
+                        pms.getClientFacadeList().Clear();
+                        pms.getServerFacadeList().Clear();
+                        pms.getServersList().Clear();
+
+                        //killing all processes
+                        foreach (Process p in processes)
+                        {
+                            p.Kill();
+                            removeNodeFromTreeView(p.StartInfo.Arguments.Split(' ')[0], null);
+                            show("Killed " + p.StartInfo.FileName + " " + p.StartInfo.Arguments);
+                        }
+                        
                         break;
                 }
 
@@ -487,6 +531,20 @@ namespace PuppetMaster
 
             sr.Close();
         }
+
+
+        private void removeNodeFromTreeView(object sender, EventArgs ea)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<object, EventArgs>(removeNodeFromTreeView), sender, ea);
+                return;
+            }
+            string username = (string)sender;
+            //Clears all nodes.
+            treeView1.Nodes.Find(username, true)[0].Remove();
+        }
+
 
         private void changeIconToDisconnected(object sender, EventArgs ea)
         {
@@ -519,7 +577,7 @@ namespace PuppetMaster
 
         }
 
-        
+
 
 
     }

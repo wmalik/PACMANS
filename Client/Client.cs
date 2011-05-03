@@ -135,6 +135,7 @@ namespace Client
             RemoteChannelProperties["name"] = _username;
             TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
             ChannelServices.RegisterChannel(channel, true);
+            
         }
 
         void StartFacade()
