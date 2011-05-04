@@ -64,16 +64,20 @@ namespace PuppetMaster
 
         }
 
+        delegate void Invoker(object parameter);
+
         public void show(object sender)
         {
-            if (InvokeRequired)
+            
+            if (this.InvokeRequired)
             {
-                Invoke(new Action<object>(show), sender);
+            
+                this.BeginInvoke(new Invoker(show), sender);
                 return;
             }
-            string msg = (string)sender;
 
-            this.consoleBox.AppendText("\r\n" + "(*) " + msg);  // WASIF- Handle exception
+            string msg = (string)sender;
+            this.consoleBox.AppendText("\r\n" + "(*) " + msg);
         }
 
         private string getIPAddress()
@@ -205,10 +209,15 @@ namespace PuppetMaster
             rr.Users = usersList;
             rr.Slots = slotsList;
             IClientFacade icf = (IClientFacade)pms.getClientFacadeList()[initiator];
+            try {
             if (icf != null)
                 icf.CreateReservation(rr);  //There is an exception unhandled here.
             else
                 show("Unable to get Client Facade of Initiator");
+            } catch(Exception ex) {
+                Console.WriteLine("[PMS-EXCEPTION] "+ex.ToString());
+            }
+            
         }
 
         private void disconnectMenuItem_Click(object sender, EventArgs e)

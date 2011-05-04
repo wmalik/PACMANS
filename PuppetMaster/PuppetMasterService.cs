@@ -61,6 +61,7 @@ namespace PuppetMaster
         public void show(string msg)
         {
             Gui.show(msg);
+            Console.WriteLine("NAVANEETH is GAY!");
         }
 
         private IClientFacade connectToClientFacadeService(ClientMetadata cm)
