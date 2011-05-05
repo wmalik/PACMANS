@@ -167,7 +167,14 @@ namespace Client
             _monitorThread = null;
             foreach (Reservation res in new List<Reservation>(_activeReservations.Values))
             {
-               res.InitiatorStub.Disconnected(res.ReservationID, _userName);
+                if (res.InitiatorID == _userName)
+                {
+                    //TODO: I'm the initiator, do something :O
+                }
+                else
+                {
+                    res.InitiatorStub.Disconnected(res.ReservationID, _userName);
+                }
             }
         }
 

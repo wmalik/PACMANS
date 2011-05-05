@@ -1,0 +1,18 @@
+connect central-1 127.0.0.1:1000
+connect central-2 127.0.0.1:1001
+connect central-3 127.0.0.1:1002
+connect user1 127.0.0.1:2121
+connect user2 127.0.0.1:2122
+reservation {R1; user1, user2; 8000}
+connect user3 127.0.0.1:2123
+disconnect user3 127.0.0.1:2123
+reservation {R2; user1, user3; 8000, 8001 }
+disconnect user1 127.0.0.1:2121
+connect user3 127.0.0.1:2123
+wait 3
+connect user1 127.0.0.1:2121
+wait 3
+readCalendar user1 127.0.0.1:2121
+readCalendar user2 127.0.0.1:2122
+readCalendar user3 127.0.0.1:2123
+shutdown

@@ -135,7 +135,7 @@ namespace Client
             RemoteChannelProperties["name"] = _username;
             TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
             ChannelServices.RegisterChannel(channel, true);
-            
+
         }
 
         void StartFacade()
@@ -190,36 +190,28 @@ namespace Client
 
             if (!_isOnline)
             {
-                
+
                 _isOnline = true;
                 StartServices();
-                Console.WriteLine("\nAttempting to Register user on central server\n");
-    
-                HERE: try
-                {
-                    Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
-                    Console.WriteLine("\nSuccesfully Registered\n");
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("\nEXCEPTION:" + e.Message);
-                    goto HERE;
-                }
-               // Helper.GetRandomServer(_servers).UnregisterUser(_username)
-     
-            /*    while (true)
+
+                Log.Show(_username, "Attempting to Register user on central server\n");
+
+                while (true)
                 {
                     try
                     {
                         Helper.GetRandomServer(_servers).RegisterUser(_username, Helper.GetIPAddress(), _port);
+                        Log.Show(_username, "Succesfully Registered\n");
                         break;
                     }
-                    catch (SocketException)
+                    catch (Exception e)
                     {
-
+                        Log.Debug(_username, "\nEXCEPTION: " + e.Message);
                     }
-                } */
+                }
+                
                 _slotManager.Connect();
+                
                 return true;
             }
 
@@ -236,18 +228,22 @@ namespace Client
                 _slotManager.Disconnect();
                 Console.WriteLine("\nAttempting to Unregister user on central server\n");
 
-            HERE: try
+                StopServices();
+
+                while (true)
                 {
-                    Helper.GetRandomServer(_servers).UnregisterUser(_username);
-                    Console.WriteLine("\nSuccesfully Unregistered\n");
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("\nEXCEPTION: " + e.Message);
-                    goto HERE;
+                    try
+                    {
+                        Helper.GetRandomServer(_servers).UnregisterUser(_username);
+                        Log.Show(_username, "Succesfully Unregistered.");
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Debug(_username, "\nEXCEPTION: " + e.Message);
+                    }
                 }
 
-                StopServices();
                 //Broadcast offline information to initiators of ongoing reservations
                 Log.Show(_username, "Client is disconnected.");
                 return true;
