@@ -221,12 +221,12 @@ namespace Server
                 if (status)
                 {
                     Log.Show(_username, "[UNREGISTER USER] " + "Unregistered client: " + username);
-                   // pms.show("[UNREGISTER USER] " + _username + ": Unregistered client: " + username);
+                    pms.show("[UNREGISTER USER] " + _username + ": Unregistered client: " + username);
                 }
                 else
                 {
                     Log.Show(_username, "[UNREGISTER USER] " + "No such entry exists: " + username);
-                    //pms.show("[UNREGISTER USER] " + _username + "No such entry exists: " + username);
+                    pms.show("[UNREGISTER USER] " + _username + "No such entry exists: " + username);
                 }
             }
             finally
@@ -363,7 +363,7 @@ namespace Server
                     }
                     else
                     {
-                        Log.Show(_username, "[READ METADATA]ERROR - ERROR"); //one tricky case possible here with failures
+                        Log.Show(_username, "[READ METADATA]ERROR - ERROR"); 
                         return null;
                     }
                 }
@@ -393,8 +393,9 @@ namespace Server
                 _sequenceNumber++; 
                 WriteSequenceNumberOnOtherServers(); 
                 Log.Show(_username, "[RETRIEVED SEQ NUMBER] Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
-               // if (pms != null)
-               //     pms.show(_username + " [RETRIEVED SEQ NUMBER] Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
+                //if (pms != null)
+                Console.WriteLine("[PMS-DEBUG] "+pms.getClientsList().ToString());
+                    pms.show(_username + " [RETRIEVED SEQ NUMBER] Sequence number retrieved. Next sequence number is: " + (_sequenceNumber));
                 return _sequenceNumber;
             }
             finally
