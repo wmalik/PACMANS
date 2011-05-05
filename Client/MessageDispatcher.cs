@@ -19,6 +19,8 @@ namespace Client
 
         void ClientConnected(string userID, IBookingService client);
 
+        void ClearMessages(List<string> participants, int resID);
+
         void ClearStub(string userID);
     }
 
@@ -143,6 +145,25 @@ namespace Client
                     else
                     {
                         break;
+                    }
+                }
+            }
+        }
+
+        public void ClearMessages(List<string> participants, int resID)
+        {
+            foreach (string userID in participants)
+            {
+                if (!userID.Equals(_userName))
+                {
+                    List<Tuple<MessageType, int, object[]>> userQueue;
+                    if (_msgQueue.TryGetValue(userID, out userQueue))
+                    {
+                        foreach(Tuple<MessageType, int, object[]> msg in new List<Tuple<MessageType, int, object[]>>(userQueue)){
+                            if(msg.Item2 == resID){
+                                userQueue.Remove(msg);
+                            }
+                        }
                     }
                 }
             }

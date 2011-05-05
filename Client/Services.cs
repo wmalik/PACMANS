@@ -28,14 +28,11 @@ namespace Client.Services
 
         void DoCommit(int resId, int slotID);
 
-        void DoCommitReply(int resId, int slotID);
+        void DoCommitReply(int resId, int slotID, string userID, bool ack);
 
         void Disconnected(int resId, string userID);
 
         void AbortReservation(int resId);
-
-        void FinishReservation(int resId);
-
     }
 
 }

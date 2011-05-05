@@ -8,8 +8,11 @@ namespace Common.Slots
     [Serializable]
     public class CalendarSlot
     {
+        [NonSerialized]
         private bool m_locked;
+        [NonSerialized]
         private List<int> m_queue;
+        [NonSerialized]
         private List<int> m_waitingBook;
 
         public CalendarSlot()

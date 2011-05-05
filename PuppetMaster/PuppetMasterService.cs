@@ -22,6 +22,11 @@ namespace PuppetMaster
         Hashtable clientFacadeList = new Hashtable();
         Hashtable serverFacadeList = new Hashtable();
 
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
+
         public PuppetMasterService()
         {
         }

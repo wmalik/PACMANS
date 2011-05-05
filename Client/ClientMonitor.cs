@@ -31,14 +31,14 @@ namespace Client
         private string _userName;
         private List<ServerMetadata> _servers;
 
-        private ConnectedEventHandler _connectedInterested;
+        private IMessageDispatcher _msgDispatch;
         private Dictionary<int, Reservation> _monitoredReservations;
 
         ILookupService _activeServer;
 
-        public ClientMonitor(ConnectedEventHandler interested, string userName, List<ServerMetadata> servers)
+        public ClientMonitor(IMessageDispatcher msgDispatch, string userName, List<ServerMetadata> servers)
         {
-            _connectedInterested = interested;
+            _msgDispatch = msgDispatch;
             _monitoredReservations = new Dictionary<int, Reservation>();
             _userName = userName;
             _servers = servers;
@@ -63,6 +63,22 @@ namespace Client
                 res.ClientStubs.Clear();
                 _monitoredReservations.Remove(resID);
                 //Unock here
+            }
+
+            foreach (string userID in res.Participants)
+            {
+                bool remove = true;
+                foreach(Reservation otherRes in _monitoredReservations.Values){
+                    if (otherRes.Participants.Contains(userID))
+                    {
+                        remove = false;
+                        break;
+                    }
+                }
+                if (remove)
+                {
+                    _msgDispatch.ClearStub(userID);
+                }
             }
         }
 
@@ -99,7 +115,7 @@ namespace Client
                                 if (client != null)
                                 {
                                     Log.Show(_userName, "Participant " + userID + " of reservation " + res.ReservationID + " has just came online.");
-                                    _connectedInterested.Invoke(userID, client);
+                                    _msgDispatch.ClientConnected(userID, client);
                                     //Lock here
                                     res.ClientStubs[userID] = client;
                                     //Unlock here
@@ -125,7 +141,7 @@ namespace Client
 
                     if (client != null)
                     {
-                        _connectedInterested.Invoke(userID, client);
+                        _msgDispatch.ClientConnected(userID, client);
                         onlineUsers[userID] = client;
                     }
                 }
@@ -144,7 +160,10 @@ namespace Client
             {
                 try
                 {
+                    //TODO: Navaneeth: here
+                    Log.Show(_userName, "#1");
                     clientMd = _activeServer.Lookup(userID);
+                    Log.Show(_userName, "#2");
                     contacted = true;
                 }
                 catch (Exception)
@@ -159,7 +178,10 @@ namespace Client
 
             if (clientMd != null)
             {
+
                 String connectionString = "tcp://" + clientMd.IP_Addr + ":" + clientMd.Port + "/" + clientMd.Username + "/" + Common.Constants.BOOKING_SERVICE_NAME;
+
+                //Log.Debug(_userName, "Looking up participant stub: " + connectionString);
 
                 try
                 {

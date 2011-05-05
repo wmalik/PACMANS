@@ -67,7 +67,7 @@ namespace Client
             _port = port;
             _servers = servers;
             _msgDispatcher = new MessageDispatcher(_userName);
-            _clientMonitor = new ClientMonitor(new ConnectedEventHandler(_msgDispatcher.ClientConnected), _userName, _servers);
+            _clientMonitor = new ClientMonitor(_msgDispatcher, _userName, _servers);
             _disconnectInterested = new DisconnectedEventHandler(_msgDispatcher.ClientDisconnected) + new DisconnectedEventHandler(_clientMonitor.Disconnected);
             _monitorThread = null;
         }
@@ -117,7 +117,7 @@ namespace Client
                     CalendarSlot cSlot = _calendar[slot.SlotID];
                     if (slot.State != ReservationSlotState.ABORTED && !cSlot.Locked && cSlot.State != CalendarSlotState.ASSIGNED)
                     {
-                        AssignCalendarSlot(res, slot);
+                        AssignCalendarSlot(res, slot, true);
                         //RELEASE LOCK HERE
                         return true;
                     }
@@ -130,7 +130,6 @@ namespace Client
                 //RELEASE LOCK HERE (finally)
 
                 //TODO check this
-                //AbortReservation(res.ReservationID);
                 return false;
             }
 
@@ -168,18 +167,7 @@ namespace Client
             _monitorThread = null;
             foreach (Reservation res in new List<Reservation>(_activeReservations.Values))
             {
-                foreach (KeyValuePair<string, IBookingService> tuple in res.ClientStubs)
-                {
-                    try
-                    {
-                        tuple.Value.Disconnected(res.ReservationID, _userName);
-                        Log.Debug(_userName, "Sent disconnect message to " + tuple.Key + " of active reservation " + res.ReservationID);
-                    }
-                    catch (RemotingException)
-                    {
-                        Log.Debug(_userName, "Failure when sending disconnect message to " + tuple.Key + " of active reservation " + res.ReservationID + ". Node probably disconnected.");
-                    }
-                }
+               res.InitiatorStub.Disconnected(res.ReservationID, _userName);
             }
         }
 
@@ -208,26 +196,11 @@ namespace Client
             Log.Show(_userName, "Received " + (ack ? "POSITIVE" : "NEGATIVE") + " book ACK from participant " + userID + " for slot " + slotID + " of  reservation " + resID);
 
             Reservation res;
-            if (!_activeReservations.TryGetValue(resID, out res))
-            {
-                Log.Show(_userName, "WARN: Received book reply from unknown reservation " + resID);
-                return;
-            }
-
-            res.Replied.Add(userID);
-
-            if (!ack)
-            {
-                ReservationSlot slot = GetSlot(res, slotID);
-                AbortReservationSlot(slot, false);
-            }
 
             //Check if all participants replied before moving to next phase
-            if (res.Replied.Count == (res.Participants.Count - 1))
+            if (CollectReply(resID, slotID, userID, ack, out res))
             {
                 Log.Show(_userName, "All participants replied for booking of slot " + slotID + " of reservation " + res.ReservationID);
-
-                res.Replied.Clear();
 
                 PrepareCommitOrBookNextSlot(res, slotID);
             }
@@ -239,30 +212,31 @@ namespace Client
             Log.Show(_userName, "Received " + (ack ? "POSITIVE" : "NEGATIVE") + " pre commit ACK from participant " + userID + " for slot " + slotID + " of  reservation " + resID);
 
             Reservation res;
-            if (!_activeReservations.TryGetValue(resID, out res))
-            {
-                Log.Show(_userName, "WARN: Received pre-commit reply from unknown reservation " + resID);
-                return;
-            }
-
-            res.Replied.Add(userID);
-
-            ReservationSlot slot = GetSlot(res, slotID);
-            if (slot.State != ReservationSlotState.ABORTED && !ack)
-            {
-                AbortReservationSlot(slot, false);
-            }
 
             //Check if all participants replied before moving to next phase
-            if (res.Replied.Count == (res.Participants.Count - 1))
+            if (CollectReply(resID, slotID, userID, ack, out res))
             {
                 Log.Show(_userName, "All participants replied for pre-commit of slot " + slotID + " of reservation " + res.ReservationID);
 
-                res.Replied.Clear();
-
-                CommitOrBookNextSlot(res, slotID);
+                CommitSlot(res, slotID);
             }
+        }
 
+        void IBookingService.DoCommitReply(int resID, int slotID, string userID, bool ack)
+        {
+
+            Log.Show(_userName, "Received commit ACK from participant " + userID + " for slot " + slotID + " of  reservation " + resID);
+
+            Reservation res;
+
+            //Check if all participants replied before moving to next phase
+            if (CollectReply(resID, slotID, userID, ack, out res) && res.Replied.Count == (res.Participants.Count - 1))
+            {
+                Log.Show(_userName, "All participants committed slot " + slotID + " of reservation " + res.ReservationID + ". Cleaning up reservation");
+
+                CleanReservation(res);
+                _clientMonitor.RemoveReservation(resID);
+            }
         }
 
         /*
@@ -342,11 +316,11 @@ namespace Client
             //GET LOCK HERE
 
             CalendarSlot calendarSlot = _calendar[slotID];
+            calendarSlot.WaitingBook.Remove(slotID);
 
             //if slot is already booked and resID is bigger than ID holding lock, add this request to queue
             if (calendarSlot.State == CalendarSlotState.BOOKED && resID > calendarSlot.ReservationID)
             {
-                calendarSlot.WaitingBook.Remove(slotID);
                 Log.Show(_userName, "Book request for slot " + slotID + " of  reservation " + resID + " was enqueued. Higher priority request " + calendarSlot.ReservationID + " already booked.");
                 calendarSlot.BookQueue.Add(resID);
                 return;
@@ -357,11 +331,10 @@ namespace Client
             if (ack)
             {
                 BookCalendarSlot(res, resSlot);
-
             }
             else
             {
-                resSlot.State = ReservationSlotState.ABORTED;
+                AbortReservationSlot(resSlot, true);
             }
 
             //RELEASE LOCK HERE
@@ -394,9 +367,7 @@ namespace Client
 
             CalendarSlot calendarSlot = _calendar[slotID];
 
-            //TODO: maybe also have a queue for do-commit requests? (may lead to deadlocks).. for now just denying 
-
-            bool ack = calendarSlot.State == CalendarSlotState.BOOKED && calendarSlot.ReservationID == resID;
+            bool ack = !calendarSlot.Locked && calendarSlot.State == CalendarSlotState.BOOKED && calendarSlot.ReservationID == resID;
 
             if (ack)
             {
@@ -404,7 +375,7 @@ namespace Client
             }
             else
             {
-                resSlot.State = ReservationSlotState.ABORTED;
+                AbortReservationSlot(resSlot, true);
             }
 
             //RELEASE LOCK HERE
@@ -435,14 +406,11 @@ namespace Client
 
             //GET LOCK HERE
 
-            AssignCalendarSlot(res, resSlot);
+            AssignCalendarSlot(res, resSlot, true);
 
             //RELEASE LOCK HERE
-        }
 
-        void IBookingService.DoCommitReply(int resId, int slotID)
-        {
-            throw new NotImplementedException();
+            res.InitiatorStub.DoCommitReply(resSlot.ReservationID, resSlot.SlotID, _userName, true);
         }
 
         void IBookingService.Disconnected(int resId, string userID)
@@ -473,25 +441,6 @@ namespace Client
                 return;
             }
 
-            //if (_userName == res.InitiatorID)
-            //{
-            //    //I am the initiator, someone has disconnected in the middle of a reservation, tell the others
-            //    foreach (IBookingService client in res.ClientStubs.Values)
-            //    {
-            //        try
-            //        {
-            //            AbortDelegate abortRes = new AbortDelegate(client.AbortReservation);
-            //            IAsyncResult RemAr = abortRes.BeginInvoke(resID, null, null);
-            //        }
-            //        catch (SocketException e)
-            //        {
-            //            Log.Show(_userName, "ERROR: Could not connect to client. Exception: " + e);
-            //            //TODO: do something
-            //        }
-            //    }
-            //}
-
-
             foreach (ReservationSlot slot in res.Slots)
             {
                 if (slot.State != ReservationSlotState.ABORTED)
@@ -511,11 +460,6 @@ namespace Client
 
         }
 
-
-        public void FinishReservation(int resId)
-        {
-            throw new NotImplementedException();
-        }
 
         /*
          * AUX METHODS
@@ -579,88 +523,89 @@ namespace Client
 
         private void PrepareCommitOrBookNextSlot(Reservation res, int slotID)
         {
+            //GET LOCK HERE
 
-            ReservationSlot slot = GetSlot(res, slotID);
+            CalendarSlot calendarSlot = _calendar[slotID];
 
-            if (slot != null)
+            if (calendarSlot.Locked || calendarSlot.State == CalendarSlotState.ASSIGNED || calendarSlot.ReservationID != res.ReservationID)
             {
-                //GET LOCK HERE
+                Log.Show(_userName, "Booking of slot " + slotID + " of reservation " + res.ReservationID + " failed. Trying to book next slot.");
+                //RELEASE LOCK HERE
 
-                CalendarSlot calendarSlot = _calendar[slotID];
+                BookNextSlot(res);
+            }
+            else
+            {
+                Log.Show(_userName, "Slot " + slotID + " of reservation " + res.ReservationID + " was booked successfully. Starting commit process.");
 
-                if (slot.State == ReservationSlotState.ABORTED || calendarSlot.State == CalendarSlotState.ASSIGNED)
+                ReservationSlot slot = GetSlot(res, slotID);
+                LockCalendarSlot(res, slot);
+
+                //RELEASE LOCK HERE
+
+                foreach (string participantID in res.Participants)
                 {
-                    Log.Show(_userName, "Booking of slot " + slotID + " of reservation " + res.ReservationID + " failed. Trying to book next slot.");
-                    //RELEASE LOCK HERE
-
-                    BookNextSlot(res);
-                }
-                else if (slot.State == ReservationSlotState.TENTATIVELY_BOOKED)
-                {
-                    Log.Show(_userName, "Slot " + slotID + " of reservation " + res.ReservationID + " was booked successfully. Starting commit process.");
-
-                    LockCalendarSlot(res, slot);
-
-                    //RELEASE LOCK HERE
-
-                    foreach (string participantID in res.Participants)
+                    if (!participantID.Equals(_userName))
                     {
-                        if (!participantID.Equals(_userName))
-                        {
-                            _msgDispatcher.SendMessage(MessageType.PRE_COMMIT, res.ReservationID, participantID, slot.SlotID);
-                        }
+                        _msgDispatcher.SendMessage(MessageType.PRE_COMMIT, res.ReservationID, participantID, slot.SlotID);
                     }
-                }
-                else
-                {
-                    //RELEASE LOCK HERE
-                    Log.Show(_userName, "FATAL: Undefined behavior... hopefully it will never happen.");
                 }
             }
         }
 
-        private void CommitOrBookNextSlot(Reservation res, int slotID)
+        private void CommitSlot(Reservation res, int slotID)
         {
             ReservationSlot slot = GetSlot(res, slotID);
 
-            if (slot != null)
+            Log.Show(_userName, "Slot " + slotID + " of reservation " + res.ReservationID + " was pre-committed successfully. Assigning calendar slot.");
+
+            AssignCalendarSlot(res, slot, false);
+
+            //RELEASE LOCK HERE
+
+            foreach (string participantID in res.Participants)
             {
-                //GET LOCK HERE
-
-                CalendarSlot calendarSlot = _calendar[slotID];
-
-                if (slot.State == ReservationSlotState.ABORTED || calendarSlot.State == CalendarSlotState.ASSIGNED)
+                if (!participantID.Equals(_userName))
                 {
-                    Log.Show(_userName, "Pre-commit of slot " + slotID + " of reservation " + res.ReservationID + " failed. Trying to book next slot.");
-                    //RELEASE LOCK HERE
-
-                    BookNextSlot(res);
+                    _msgDispatcher.SendMessage(MessageType.DO_COMMIT, res.ReservationID, participantID, slot.SlotID);
                 }
-                else if (slot.State == ReservationSlotState.COMMITTED)
+            }
+
+            //TODO: Log to puppet master
+            Log.Show(_userName, "Reservation " + res.ReservationID + " succesfully assigned to slot " + slotID + " on clients: " + string.Join(",", res.Participants));
+        }
+
+        private bool CollectReply(int resID, int slotID, string userID, bool ack, out Reservation res)
+        {
+            if (!_activeReservations.TryGetValue(resID, out res))
+            {
+                Log.Show(_userName, "WARN: Received reply from unknown reservation " + resID);
+                return false;
+            }
+
+            if (res.CurrentSlot == slotID)
+            {
+                if (ack)
                 {
-                    Log.Show(_userName, "Slot " + slotID + " of reservation " + res.ReservationID + " was pre-committed successfully. Assigning calendar slot.");
-
-                    AssignCalendarSlot(res, slot);
-
-                    //RELEASE LOCK HERE
-
-                    foreach (string participantID in res.Participants)
+                    res.Replied.Add(userID);
+                    if (res.Replied.Count == (res.Participants.Count - 1))
                     {
-                        if (!participantID.Equals(_userName))
-                        {
-                            _msgDispatcher.SendMessage(MessageType.DO_COMMIT, res.ReservationID, participantID, slot.SlotID);
-                        }
+                        res.Replied.Clear();
+                        return true;
                     }
-
-                    //TODO: Log to puppet master
-                    Log.Show(_userName, "Reservation " + res.ReservationID + " succesfully assigned to slot " + slotID + " on clients: " + string.Join(",", res.Participants));
                 }
                 else
                 {
-                    //RELEASE LOCK HERE
-                    Log.Show(_userName, "FATAL: Undefined behavior... hopefully it will never happen.");
+                    _msgDispatcher.ClearMessages(res.Participants, resID);
+                    ReservationSlot slot = GetSlot(res, slotID);
+                    AbortReservationSlot(slot, false);
+                    res.Replied.Clear();
+                    BookNextSlot(res);
                 }
+                return false;
             }
+
+            return false;
         }
 
         private void AbortReservationSlot(ReservationSlot slot, bool locked)
@@ -745,7 +690,7 @@ namespace Client
         /*
          * CALENDAR SHOULD BE LOCKED BEFORE CALLING THIS METHOD
          */
-        private void AssignCalendarSlot(Reservation res, ReservationSlot resSlot)
+        private void AssignCalendarSlot(Reservation res, ReservationSlot resSlot, bool clean)
         {
 
             //Change calendar and reservation slot states
@@ -753,12 +698,7 @@ namespace Client
             calendarSlot.State = CalendarSlotState.ASSIGNED;
             calendarSlot.ReservationID = res.ReservationID;
 
-            //Remove from list of active reservations
-            _activeReservations.Remove(res.ReservationID);
-            _committedReservations[res.ReservationID] = res;
-            _clientMonitor.RemoveReservation(res.ReservationID);
-
-            //TODO: SEND ASYNCHRONOUS NACK TO ALL PENDING RESERVATIONS ON THE QUEUE
+            ////SEND ASYNCHRONOUS NACK TO ALL PENDING RESERVATIONS ON THE QUEUE
             foreach (int resID in new List<int>(calendarSlot.BookQueue))
             {
                 Reservation otherRes;
@@ -777,6 +717,18 @@ namespace Client
                     AbortReservationSlot(slot, true);
                 }
             }
+
+            if (clean)
+            {
+                CleanReservation(res);
+            }
+        }
+
+        private void CleanReservation(Reservation res)
+        {
+            //Remove from list of active reservations
+            _activeReservations.Remove(res.ReservationID);
+            _committedReservations[res.ReservationID] = res;
         }
 
         //Verify calendar slots and create reservation states
