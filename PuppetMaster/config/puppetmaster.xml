@@ -2,14 +2,15 @@
 <config>
 <port>34243</port>
 <service>PuppetMasterService</service>
- <!-- Navaneeth's path
- <client_dir>C:\\Users\\Administrator\\PACMANS\\Client\\bin\\Debug\\</client_dir> 
+ <!-- Navaneeth's path   -->
+
+<client_dir>C:\\Users\\Administrator\\PACMANS\\Client\\bin\\Debug\\</client_dir> 
   <server_dir>C:\\Users\\Administrator\\PACMANS\\Server\\bin\\Debug\\</server_dir>
-  -->
   
-  <!-- Wasif's Path -->
+  <!-- Wasif's Path 
   <client_dir>D:\\My Dropbox\\EMDC\\Second_Sem\\PADI\\Project\\PACMANS\\Client\\bin\\Debug\\</client_dir>
   <server_dir>D:\\My Dropbox\\EMDC\\Second_Sem\\PADI\\Project\\PACMANS\\Server\\bin\\Debug\\</server_dir>
-  
- <invisible_windows>no</invisible_windows>
+  -->
+
+  <invisible_windows>no</invisible_windows>
 </config>
