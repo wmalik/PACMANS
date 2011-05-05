@@ -21,6 +21,8 @@ namespace PuppetMaster
         Hashtable servers_list = new Hashtable();
         Hashtable clientFacadeList = new Hashtable();
         Hashtable serverFacadeList = new Hashtable();
+        TcpChannel client_channel;
+        TcpChannel server_channel;
 
         public override object InitializeLifetimeService()
         {
@@ -33,7 +35,7 @@ namespace PuppetMaster
 
         public PuppetMasterService(PuppetGUI gui)
         {
-            this.Gui= gui;
+            this.Gui = gui;
         }
 
         public PuppetGUI Gui
@@ -71,16 +73,16 @@ namespace PuppetMaster
 
         private IClientFacade connectToClientFacadeService(ClientMetadata cm)
         {
-            
+
             //connect to PuppetMaster here
-            String connectionString = "tcp://" + cm.IP_Addr + ":" + cm.Port + "/" + cm.Username + "/"+Common.Constants.CLIENT_FACADE_SERVICE;
+            String connectionString = "tcp://" + cm.IP_Addr + ":" + cm.Port + "/" + cm.Username + "/" + Common.Constants.CLIENT_FACADE_SERVICE;
 
             IDictionary RemoteChannelProperties = new Dictionary<string, string>();
             RemoteChannelProperties["name"] = cm.Username;
 
-            TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
+            client_channel = new TcpChannel(RemoteChannelProperties, null, null);
 
-            ChannelServices.RegisterChannel(channel, true);
+            ChannelServices.RegisterChannel(client_channel, true);
 
             //TODO: uncomment and fix this to make it work
             IClientFacade facadeService = (IClientFacade)Activator.GetObject(
@@ -89,8 +91,8 @@ namespace PuppetMaster
 
 
             return facadeService;
-             
-             
+
+
         }
 
 
@@ -102,9 +104,9 @@ namespace PuppetMaster
             IDictionary RemoteChannelProperties = new Dictionary<string, string>();
             RemoteChannelProperties["name"] = sm.Username;
 
-            TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
+            server_channel = new TcpChannel(RemoteChannelProperties, null, null);
 
-            ChannelServices.RegisterChannel(channel, true);
+            ChannelServices.RegisterChannel(server_channel, true);
 
             //TODO: uncomment and fix this to make it work
             IServerFacade facadeService = (IServerFacade)Activator.GetObject(
@@ -115,22 +117,24 @@ namespace PuppetMaster
 
         }
 
+      
+
 
         public bool registerClient(string username, string ip_addr, int port)
         {
-            
+
             //creating a ClientMetadata object to store client information
             ClientMetadata cm = new ClientMetadata();
             cm.Username = username;
             cm.IP_Addr = ip_addr;
             cm.Port = port;
-            
+
             //adding the client metadata to the global hashtable so that it can be used later on
             clients_list.Add(username, cm);
 
             IClientFacade facadeService = connectToClientFacadeService(cm);
             clientFacadeList.Add(username, facadeService);
-            
+
             //update the Clients tree in PuppetGUI
             Gui.updateClientsTree(cm, null);
 
@@ -157,35 +161,3 @@ namespace PuppetMaster
     }
 }
 
-
-/*
- Hashtable example
- * 
- * static Hashtable GetHashtable()
-    {
-	// Create and return new Hashtable.
-	Hashtable hashtable = new Hashtable();
-	hashtable.Add("Area", 1000);
-	hashtable.Add("Perimeter", 55);
-	hashtable.Add("Mortgage", 540);
-	return hashtable;
-    }
-
-    static void Main()
-    {
-	Hashtable hashtable = GetHashtable();
-
-	// See if the Hashtable contains this key.
-	Console.WriteLine(hashtable.ContainsKey("Perimeter"));
-
-	// Test the Contains method. It works the same way.
-	Console.WriteLine(hashtable.Contains("Area"));
-
-	// Get value of Area with indexer.
-	int value = (int)hashtable["Area"];
-
-	// Write the value of Area.
-	Console.WriteLine(value);
-    }
- 
- */
