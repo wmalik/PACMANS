@@ -68,13 +68,14 @@ namespace Server
                 {
                     RemoteLookupDelegate del = (RemoteLookupDelegate)((AsyncResult)ar).AsyncDelegate;
                     data = del.EndInvoke(ar);
+                    Console.WriteLine("\nSIGNALLED STATUS");
                     waiter.Set();
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine("Exception" + e.Message);
                     data = null;
-                    Console.WriteLine("\nFAILURE SIGNALLED STATUS" + _status);
+                    Console.WriteLine("\nFAILURE SIGNALLED STATUS");
                     waiter.Set();
                 }
 
@@ -153,6 +154,7 @@ namespace Server
                 client.Username = username;
                 RegisterInfoOnAllServer(client);
                 Log.Show(_username, "Registered client " + username + ": " + ip + ":" + port);
+                pms.show("[REGISTER USER]" + _username + "-Registered client " + username + ": " + ip + ":" + port);
             }
             finally
             {
@@ -322,13 +324,14 @@ namespace Server
             callback.RemoteLookupDelegate RemoteDelforLookup2 = new callback.RemoteLookupDelegate(() => server[1].ReadClientMetadata(username));
             IAsyncResult RemArForLookup2 = RemoteDelforLookup2.BeginInvoke(RemoteCallbackOnLookup1, null);
 
+            bool dataEqual;
+            ClientMetadata myData = action.ReadClientMetadata(username);
+
             Log.Show(_username, "[READ METADATA] Waiting for one server to return");
             returnedValueOnLookup1.waiter.WaitOne();
             returnedValueOnLookup1.waiter.Reset();
 
             //Compare the received value
-            bool dataEqual;
-            ClientMetadata myData = action.ReadClientMetadata(username);
             ClientMetadata DataFromServer1 = returnedValueOnLookup1.data;
             dataEqual = CompareValues(myData, DataFromServer1);
 
@@ -341,6 +344,7 @@ namespace Server
 
             else
             {
+                Log.Show(_username, "[READ METADATA] Waiting for second server to return");
                 returnedValueOnLookup1.waiter.WaitOne();
                 returnedValueOnLookup1.waiter.Reset();
 

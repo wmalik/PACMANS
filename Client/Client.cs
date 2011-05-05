@@ -234,6 +234,8 @@ namespace Client
                 {
                     try
                     {
+                      //  Helper.GetRandomServer(_servers).Lookup("Paulo");
+                      //  Log.Show(_username, "[DEBUG] Lookup for Paulo");
                         Helper.GetRandomServer(_servers).UnregisterUser(_username);
                         Log.Show(_username, "Succesfully Unregistered.");
                         break;

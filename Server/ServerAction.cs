@@ -98,7 +98,15 @@ namespace Server
 
         public bool UnregisterUser(string username)
         {
-            return (_clients.Remove(username));
+            Monitor.Enter(this);
+            try
+            {
+                return (_clients.Remove(username));
+            }
+            finally
+            {
+                Monitor.Exit(this);
+            }
         }
 
         public Dictionary<string, ClientMetadata> UpdateInfo()
