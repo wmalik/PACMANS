@@ -4,3 +4,4 @@ connect central-3 127.0.0.1:1002
 connect user1 127.0.0.1:2301
 reservation {R1;user1;8000}
 readCalendar user1 127.0.0.1:2301
+shutdown

@@ -7,3 +7,4 @@ reservation {R1;user2;8000}
 reservation {R2;user1,user2;8000,8001}
 readCalendar user1 127.0.0.1:2701
 readCalendar user2 127.0.0.1:2702
+shutdown

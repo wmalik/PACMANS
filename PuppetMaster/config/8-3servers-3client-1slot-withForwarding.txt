@@ -12,3 +12,4 @@ disconnect user2 127.0.0.1:2902
 connect user1 127.0.0.1:2901
 readCalendar user1 127.0.0.1:2901
 readCalendar user2 127.0.0.1:2902
+shutdown
