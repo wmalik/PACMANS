@@ -10,15 +10,15 @@ namespace Common.Slots
     {
         [NonSerialized]
         private bool m_locked;
-        [NonSerialized]
-        private List<int> m_queue;
+        //[NonSerialized]
+        //private List<int> m_queue;
         [NonSerialized]
         private List<int> m_waitingBook;
 
         public CalendarSlot()
         {
             WaitingBook = new List<int>();
-            BookQueue = new List<int>();
+            //BookQueue = new List<int>();
             Locked = false;
         }
 
@@ -46,11 +46,11 @@ namespace Common.Slots
             set { this.m_locked = value; }
         }
 
-        public List<int> BookQueue
-        {
-            get { return this.m_queue; }
-            set { this.m_queue = value; }
-        }
+        //public List<int> BookQueue
+        //{
+        //    get { return this.m_queue; }
+        //    set { this.m_queue = value; }
+        //}
 
         public List<int> WaitingBook
         {

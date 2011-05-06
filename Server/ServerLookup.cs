@@ -21,13 +21,15 @@ namespace Server
 
     class callback
     {
+        public static int WAIT_TIME = 10;
+
         public delegate bool RemoteAsyncDelegate();
         public delegate ClientMetadata RemoteLookupDelegate();
         public delegate Dictionary<string, ClientMetadata> RemoteUpdateDelegate();
         public bool _status;
-        public ClientMetadata data = new ClientMetadata();
+        public ClientMetadata data;
         public Dictionary<string, ClientMetadata> info;
-        public ManualResetEvent waiter = new ManualResetEvent(false);
+        public AutoResetEvent waiter = new AutoResetEvent(false);
 
         // This is the call that the AsyncCallBack delegate will reference.
         public void OurRemoteAsyncCallBack(IAsyncResult ar)
@@ -42,6 +44,7 @@ namespace Server
                     _status = del.EndInvoke(ar);
                     Console.WriteLine("\nSIGNALLED STATUS" + _status);
                     waiter.Set();
+                    Thread.Sleep(WAIT_TIME);
                 }
                 catch (Exception e)
                 {
@@ -49,6 +52,7 @@ namespace Server
                     _status = false;
                     Console.WriteLine("\nFAILURE SIGNALLED STATUS" + _status);
                     waiter.Set();
+                    Thread.Sleep(WAIT_TIME);
                 }
                 return;
             }
@@ -70,6 +74,7 @@ namespace Server
                     data = del.EndInvoke(ar);
                     Console.WriteLine("\nSIGNALLED STATUS");
                     waiter.Set();
+                    Thread.Sleep(WAIT_TIME);
                 }
                 catch (Exception e)
                 {
@@ -77,6 +82,7 @@ namespace Server
                     data = null;
                     Console.WriteLine("\nFAILURE SIGNALLED STATUS");
                     waiter.Set();
+                    Thread.Sleep(WAIT_TIME);
                 }
 
                 return;
@@ -100,6 +106,7 @@ namespace Server
                     info = new Dictionary<string,ClientMetadata> (del.EndInvoke(ar));
                     Console.WriteLine("\nSIGNALLED STATUS" + _status);
                     waiter.Set();
+                    Thread.Sleep(WAIT_TIME);
                 }
                 catch (Exception e)
                 {
@@ -186,13 +193,13 @@ namespace Server
             Log.Show(_username, "[REGISTER CLIENT] Waiting for atleast one Server to return");
 
             returnedValueOnRegister1.waiter.WaitOne();
-            returnedValueOnRegister1.waiter.Reset();
+            //returnedValueOnRegister1.waiter.Reset();
 
             if (returnedValueOnRegister1._status == false)
             {
                 Log.Show(_username, "[REGISTER CLIENT] One of the Servers failed to register");
                 returnedValueOnRegister1.waiter.WaitOne();
-                returnedValueOnRegister1.waiter.Reset();
+               // returnedValueOnRegister1.waiter.Reset();
 
                 if (returnedValueOnRegister1._status == false)
                 {
@@ -265,14 +272,14 @@ namespace Server
 
             Log.Show(_username, "[UNREGISTER USER] Waiting for one Server to return");
             returnedValueOnUnregister1.waiter.WaitOne();
-            returnedValueOnUnregister1.waiter.Reset();
+            //returnedValueOnUnregister1.waiter.Reset();
 
             if (returnedValueOnUnregister1._status == false)
             {
                 Log.Show(_username, "[UNREGISTER USER] One of the servers failed to unregister!!");
 
                 returnedValueOnUnregister1.waiter.WaitOne();
-                returnedValueOnUnregister1.waiter.Reset();
+                //returnedValueOnUnregister1.waiter.Reset();
 
                 if (returnedValueOnUnregister1._status == false)
                 {
@@ -329,7 +336,7 @@ namespace Server
 
             Log.Show(_username, "[READ METADATA] Waiting for one server to return");
             returnedValueOnLookup1.waiter.WaitOne();
-            returnedValueOnLookup1.waiter.Reset();
+            //returnedValueOnLookup1.waiter.Reset();
 
             //Compare the received value
             ClientMetadata DataFromServer1 = returnedValueOnLookup1.data;
@@ -346,7 +353,9 @@ namespace Server
             {
                 Log.Show(_username, "[READ METADATA] Waiting for second server to return");
                 returnedValueOnLookup1.waiter.WaitOne();
-                returnedValueOnLookup1.waiter.Reset();
+                //returnedValueOnLookup1.waiter.Reset();
+
+                Log.Show(_username, "[READ METADATA] Second server returned");
 
                 ClientMetadata DataFromServer2 = returnedValueOnLookup1.data;
                 dataEqual = CompareValues(myData, DataFromServer2);
@@ -380,7 +389,7 @@ namespace Server
             if ((myValue == null) || (receivedValue == null))
                 return false;
 
-            if ((myValue.Username == receivedValue.Username) && (myValue.IP_Addr == receivedValue.IP_Addr) && (myValue.Port == receivedValue.Port))
+            if ((myValue.Username.Equals(receivedValue.Username)) && (myValue.IP_Addr.Equals(receivedValue.IP_Addr)) && (myValue.Port.Equals(receivedValue.Port)))
                 return true;
             else
                 return false;
@@ -443,7 +452,7 @@ namespace Server
 
             Log.Show(_username, "WAITING HERE FOR FIRST SERVER");
             returnedValue1.waiter.WaitOne();
-            returnedValue1.waiter.Reset();
+            //returnedValue1.waiter.Reset();
 
         
             if (returnedValue1._status == false)
@@ -451,7 +460,7 @@ namespace Server
                 Log.Show(_username, "[SEQ NUMBER] One of the Servers failed to set the sequence number: " + _sequenceNumber);
                 Log.Show(_username, "WAITING HERE FOR SECOND SERVER ASSUMING FIRST RETURNED FALSE");
                 returnedValue1.waiter.WaitOne();
-                returnedValue1.waiter.Reset();
+                //returnedValue1.waiter.Reset();
 
                 Log.Show(_username, "STATUS" + returnedValue1._status);
 
@@ -505,7 +514,7 @@ namespace Server
 
             Log.Show(_username, "WAITING HERE FOR ONE SERVER");
             returnedValueOnUpdate.waiter.WaitOne();
-            returnedValueOnUpdate.waiter.Reset();
+            //returnedValueOnUpdate.waiter.Reset();
 
             action.setinfo(returnedValueOnUpdate.info);
 

@@ -26,7 +26,7 @@ namespace Client
     public class ClientMonitor : IClientMonitor
     {
 
-        private const int SERVER_QUERY_TIME = 3000; //milliseconds
+        private const int SERVER_QUERY_TIME = 500; //milliseconds
 
         private string _userName;
         private List<ServerMetadata> _servers;

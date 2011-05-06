@@ -328,16 +328,16 @@ namespace Client
                 CalendarSlot calendarSlot = _calendar[slotID];
                 calendarSlot.WaitingBook.Remove(resID);
 
-                //if slot is already booked and resID is bigger than ID holding lock, add this request to queue
-                if (calendarSlot.State == CalendarSlotState.BOOKED && resID > calendarSlot.ReservationID)
-                {
-                    Log.Show(_userName, "Book request for slot " + slotID + " of  reservation " + resID + " was enqueued. Higher priority request " + calendarSlot.ReservationID + " already booked.");
-                    calendarSlot.BookQueue.Add(resID);
-                    return;
-                }
+                ////if slot is already booked and resID is bigger than ID holding lock, add this request to queue
+                //if (calendarSlot.State == CalendarSlotState.BOOKED && resID > calendarSlot.ReservationID)
+                //{
+                //    Log.Show(_userName, "Book request for slot " + slotID + " of  reservation " + resID + " was enqueued. Higher priority request " + calendarSlot.ReservationID + " already booked.");
+                //    calendarSlot.BookQueue.Add(resID);
+                //    return;
+                //}
 
-                //bool ack = !calendarSlot.Locked && (calendarSlot.State == CalendarSlotState.ACKNOWLEDGED || (calendarSlot.State == CalendarSlotState.BOOKED && resID < calendarSlot.ReservationID));
-                ack = !calendarSlot.Locked && calendarSlot.State != CalendarSlotState.ASSIGNED;
+                ack = !calendarSlot.Locked && (calendarSlot.State == CalendarSlotState.ACKNOWLEDGED || (calendarSlot.State == CalendarSlotState.BOOKED && resID < calendarSlot.ReservationID));
+                //ack = !calendarSlot.Locked && calendarSlot.State != CalendarSlotState.ASSIGNED;
 
                 if (ack)
                 {
@@ -496,7 +496,7 @@ namespace Client
             {
                 Monitor.Enter(_calendar[slot.SlotID]);
                 CalendarSlot cSlot = _calendar[slot.SlotID];
-                if (slot.State != ReservationSlotState.ABORTED && !cSlot.Locked && cSlot.State != CalendarSlotState.ASSIGNED)
+                if (slot.State != ReservationSlotState.ABORTED && !cSlot.Locked && (cSlot.State == CalendarSlotState.ACKNOWLEDGED || (cSlot.State == CalendarSlotState.BOOKED && res.ReservationID < cSlot.ReservationID)))
                 {
                     booked = true;
 
@@ -551,7 +551,7 @@ namespace Client
             CalendarSlot calendarSlot = _calendar[slotID];
             ReservationSlot slot = GetSlot(res, slotID);
 
-            if (calendarSlot.Locked || calendarSlot.State == CalendarSlotState.ASSIGNED || calendarSlot.ReservationID != res.ReservationID)
+            if (calendarSlot.Locked || calendarSlot.State == CalendarSlotState.ASSIGNED || (calendarSlot.State == CalendarSlotState.BOOKED && res.ReservationID > calendarSlot.ReservationID))
             {
                 Log.Show(_userName, "Booking of slot " + slotID + " of reservation " + res.ReservationID + " failed. Trying to book next slot.");
 
@@ -610,8 +610,11 @@ namespace Client
 
             if (res.CurrentSlot == slotID)
             {
+                ReservationSlot slot = GetSlot(res, slotID);
+                Monitor.Enter(slot);
                 if (ack)
                 {
+                    Monitor.Exit(slot);
                     res.Replied.Add(userID);
                     if (res.Replied.Count == (res.Participants.Count - 1))
                     {
@@ -619,11 +622,11 @@ namespace Client
                         return true;
                     }
                 }
-                else
+                else if (slot.State != ReservationSlotState.ABORTED)
                 {
-                    _msgDispatcher.ClearMessages(res.Participants, resID);
-                    ReservationSlot slot = GetSlot(res, slotID);
                     AbortReservationSlot(slot, false);
+                    Monitor.Exit(slot);
+                    _msgDispatcher.ClearMessages(res.Participants, resID);
                     res.Replied.Clear();
                     BookNextSlot(res);
                 }
@@ -664,7 +667,7 @@ namespace Client
             CalendarSlot cSlot = _calendar[slot.SlotID];
 
             cSlot.WaitingBook.Remove(slot.ReservationID);
-            cSlot.BookQueue.Remove(slot.ReservationID);
+            //cSlot.BookQueue.Remove(slot.ReservationID);
 
             if (cSlot.State == CalendarSlotState.ACKNOWLEDGED && cSlot.WaitingBook.Count == 0)
             {
@@ -675,26 +678,26 @@ namespace Client
             {
                 cSlot.Locked = false;
 
-                //Send ACK to next reservation on book queue
-                if (cSlot.BookQueue.Count > 0)
-                {
-                    int lowestResID = -1;
-                    foreach (int otherResID in cSlot.BookQueue)
-                    {
-                        if (lowestResID == -1 || lowestResID > otherResID)
-                        {
-                            lowestResID = otherResID;
-                        }
-                    }
+                ////Send ACK to next reservation on book queue
+                //if (cSlot.BookQueue.Count > 0)
+                //{
+                //    int lowestResID = -1;
+                //    foreach (int otherResID in cSlot.BookQueue)
+                //    {
+                //        if (lowestResID == -1 || lowestResID > otherResID)
+                //        {
+                //            lowestResID = otherResID;
+                //        }
+                //    }
 
-                    Reservation otherRes;
-                    if (_activeReservations.TryGetValue(lowestResID, out otherRes))
-                    {
-                        InitiatorDelegate bookReply = new InitiatorDelegate(otherRes.InitiatorStub.BookReply);
-                        IAsyncResult RemAr = bookReply.BeginInvoke(otherRes.ReservationID, slot.SlotID, _userName, true, null, null);
-                        cSlot.BookQueue.Remove(lowestResID);
-                    }
-                }
+                //    Reservation otherRes;
+                //    if (_activeReservations.TryGetValue(lowestResID, out otherRes))
+                //    {
+                //        InitiatorDelegate bookReply = new InitiatorDelegate(otherRes.InitiatorStub.BookReply);
+                //        IAsyncResult RemAr = bookReply.BeginInvoke(otherRes.ReservationID, slot.SlotID, _userName, true, null, null);
+                //        cSlot.BookQueue.Remove(lowestResID);
+                //    }
+                //}
             }
         }
 
@@ -733,17 +736,17 @@ namespace Client
             calendarSlot.State = CalendarSlotState.ASSIGNED;
             calendarSlot.ReservationID = res.ReservationID;
 
-            //SEND ASYNCHRONOUS NACK TO ALL PENDING RESERVATIONS ON THE QUEUE
-            foreach (int resID in new List<int>(calendarSlot.BookQueue))
-            {
-                Reservation otherRes;
-                if (_activeReservations.TryGetValue(resID, out otherRes))
-                {
-                    InitiatorDelegate bookReply = new InitiatorDelegate(otherRes.InitiatorStub.BookReply);
-                    IAsyncResult RemAr = bookReply.BeginInvoke(otherRes.ReservationID, resSlot.SlotID, _userName, false, null, null);
-                    calendarSlot.BookQueue.Remove(resID);
-                }
-            }
+            ////SEND ASYNCHRONOUS NACK TO ALL PENDING RESERVATIONS ON THE QUEUE
+            //foreach (int resID in new List<int>(calendarSlot.BookQueue))
+            //{
+            //    Reservation otherRes;
+            //    if (_activeReservations.TryGetValue(resID, out otherRes))
+            //    {
+            //        InitiatorDelegate bookReply = new InitiatorDelegate(otherRes.InitiatorStub.BookReply);
+            //        IAsyncResult RemAr = bookReply.BeginInvoke(otherRes.ReservationID, resSlot.SlotID, _userName, false, null, null);
+            //        calendarSlot.BookQueue.Remove(resID);
+            //    }
+            //}
 
             foreach (ReservationSlot slot in res.Slots)
             {
