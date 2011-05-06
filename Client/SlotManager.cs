@@ -113,23 +113,26 @@ namespace Client
             {
                 foreach (ReservationSlot slot in res.Slots)
                 {
-                    //GET LOCK HERE
-                    CalendarSlot cSlot = _calendar[slot.SlotID];
-                    if (slot.State != ReservationSlotState.ABORTED && !cSlot.Locked && cSlot.State != CalendarSlotState.ASSIGNED)
+                    Monitor.Enter(_calendar[slot.SlotID]);
+                    try
                     {
-                        AssignCalendarSlot(res, slot, true);
-                        //RELEASE LOCK HERE
-                        return true;
+                        CalendarSlot cSlot = _calendar[slot.SlotID];
+                        if (slot.State != ReservationSlotState.ABORTED && !cSlot.Locked && cSlot.State != CalendarSlotState.ASSIGNED)
+                        {
+                            AssignCalendarSlot(res, slot, true);
+                            return true;
+                        }
+                        else if (slot.State != ReservationSlotState.ABORTED)
+                        {
+                            AbortReservationSlot(slot, true);
+                        }
                     }
-                    else if (slot.State != ReservationSlotState.ABORTED)
+                    finally
                     {
-                        AbortReservationSlot(slot, true);
+                        Monitor.Exit(_calendar[slot.SlotID]);
                     }
                 }
 
-                //RELEASE LOCK HERE (finally)
-
-                //TODO check this
                 return false;
             }
 
@@ -167,11 +170,8 @@ namespace Client
             _monitorThread = null;
             foreach (Reservation res in new List<Reservation>(_activeReservations.Values))
             {
-                if (res.InitiatorID == _userName)
-                {
-                    //TODO: I'm the initiator, do something :O
-                }
-                else
+                //I'm not the initiator
+                if (res.InitiatorID != _userName)
                 {
                     res.InitiatorStub.Disconnected(res.ReservationID, _userName);
                 }
@@ -297,7 +297,6 @@ namespace Client
             catch (SocketException)
             {
                 Log.Show(_userName, "ERROR: Initiator is not online.");
-                //TODO: do something...
             }
 
         }
@@ -321,32 +320,38 @@ namespace Client
                 return;
             }
 
-            //GET LOCK HERE
+            bool ack;
 
-            CalendarSlot calendarSlot = _calendar[slotID];
-            calendarSlot.WaitingBook.Remove(resID);
-
-            //if slot is already booked and resID is bigger than ID holding lock, add this request to queue
-            if (calendarSlot.State == CalendarSlotState.BOOKED && resID > calendarSlot.ReservationID)
+            Monitor.Enter(_calendar[slotID]);
+            try
             {
-                Log.Show(_userName, "Book request for slot " + slotID + " of  reservation " + resID + " was enqueued. Higher priority request " + calendarSlot.ReservationID + " already booked.");
-                calendarSlot.BookQueue.Add(resID);
-                return;
+                CalendarSlot calendarSlot = _calendar[slotID];
+                calendarSlot.WaitingBook.Remove(resID);
+
+                //if slot is already booked and resID is bigger than ID holding lock, add this request to queue
+                if (calendarSlot.State == CalendarSlotState.BOOKED && resID > calendarSlot.ReservationID)
+                {
+                    Log.Show(_userName, "Book request for slot " + slotID + " of  reservation " + resID + " was enqueued. Higher priority request " + calendarSlot.ReservationID + " already booked.");
+                    calendarSlot.BookQueue.Add(resID);
+                    return;
+                }
+
+                //bool ack = !calendarSlot.Locked && (calendarSlot.State == CalendarSlotState.ACKNOWLEDGED || (calendarSlot.State == CalendarSlotState.BOOKED && resID < calendarSlot.ReservationID));
+                ack = !calendarSlot.Locked && calendarSlot.State != CalendarSlotState.ASSIGNED;
+
+                if (ack)
+                {
+                    BookCalendarSlot(res, resSlot);
+                }
+                else
+                {
+                    AbortReservationSlot(resSlot, true);
+                }
             }
-
-            //bool ack = !calendarSlot.Locked && (calendarSlot.State == CalendarSlotState.ACKNOWLEDGED || (calendarSlot.State == CalendarSlotState.BOOKED && resID < calendarSlot.ReservationID));
-            bool ack = !calendarSlot.Locked && calendarSlot.State != CalendarSlotState.ASSIGNED;
-
-            if (ack)
+            finally
             {
-                BookCalendarSlot(res, resSlot);
+                Monitor.Exit(_calendar[slotID]);
             }
-            else
-            {
-                AbortReservationSlot(resSlot, true);
-            }
-
-            //RELEASE LOCK HERE
 
             res.InitiatorStub.BookReply(resSlot.ReservationID, resSlot.SlotID, _userName, ack);
         }
@@ -374,6 +379,8 @@ namespace Client
 
             //GET LOCK HERE
 
+            Monitor.Enter(_calendar[slotID]);
+
             CalendarSlot calendarSlot = _calendar[slotID];
 
             bool ack = !calendarSlot.Locked && calendarSlot.State == CalendarSlotState.BOOKED && calendarSlot.ReservationID == resID;
@@ -386,6 +393,8 @@ namespace Client
             {
                 AbortReservationSlot(resSlot, true);
             }
+
+            Monitor.Exit(_calendar[slotID]);
 
             //RELEASE LOCK HERE
 
@@ -415,7 +424,11 @@ namespace Client
 
             //GET LOCK HERE
 
+            Monitor.Enter(_calendar[slotID]);
+
             AssignCalendarSlot(res, resSlot, true);
+
+            Monitor.Exit(_calendar[slotID]);
 
             //RELEASE LOCK HERE
 
@@ -428,7 +441,7 @@ namespace Client
             _disconnectInterested.Invoke(resId, userID);
         }
 
-        void IBookingService.AbortReservation(int resID)
+        public void AbortReservation(int resID)
         {
             //TODO VERIFY RACE CONDITIONS ON _activeReservations. MONITORS MAY BE NEEDED
 
@@ -441,7 +454,6 @@ namespace Client
             if (_committedReservations.TryGetValue(resID, out res))
             {
                 committed = true;
-                //TODO: log on puppet master
                 Log.Show(_userName, "WARN: OOPS! Received abort for already committed reservation: " + resID + ". Rolling back.");
             }
             else if (!_activeReservations.TryGetValue(resID, out res))
@@ -482,6 +494,7 @@ namespace Client
 
             foreach (ReservationSlot slot in res.Slots)
             {
+                Monitor.Enter(_calendar[slot.SlotID]);
                 CalendarSlot cSlot = _calendar[slot.SlotID];
                 if (slot.State != ReservationSlotState.ABORTED && !cSlot.Locked && cSlot.State != CalendarSlotState.ASSIGNED)
                 {
@@ -489,7 +502,7 @@ namespace Client
 
                     BookCalendarSlot(res, slot);
 
-                    //RELEASE LOCK HERE
+                    Monitor.Exit(_calendar[slot.SlotID]);
 
                     Log.Show(_userName, "Starting book process of slot " + slot.SlotID + " from reservation " + res.ReservationID);
 
@@ -503,12 +516,14 @@ namespace Client
 
                     break;
                 }
+                else
+                {
+                    Monitor.Exit(_calendar[slot.SlotID]);
+                }
             }
 
             if (!booked)
             {
-                //RELEASE LOCK HERE
-
                 Log.Show(_userName, "No available slots. Aborting reservation " + res.ReservationID);
 
                 foreach (IBookingService client in res.ClientStubs.Values)
@@ -522,17 +537,16 @@ namespace Client
                     catch (SocketException e)
                     {
                         Log.Show(_userName, "ERROR: Could not connect to client. Exception: " + e);
-                        //TODO: do something
                     }
                 }
 
-                //TODO abort reservation on initiator
+                AbortReservation(res.ReservationID);
             }
         }
 
         private void PrepareCommitOrBookNextSlot(Reservation res, int slotID)
         {
-            //GET LOCK HERE
+            Monitor.Enter(_calendar[slotID]);
 
             CalendarSlot calendarSlot = _calendar[slotID];
             ReservationSlot slot = GetSlot(res, slotID);
@@ -543,7 +557,7 @@ namespace Client
 
                 AbortReservationSlot(slot, true);
 
-                //RELEASE LOCK HERE
+                Monitor.Exit(_calendar[slotID]);
 
                 BookNextSlot(res);
             }
@@ -553,7 +567,7 @@ namespace Client
 
                 LockCalendarSlot(res, slot);
 
-                //RELEASE LOCK HERE
+                Monitor.Exit(_calendar[slotID]);
 
                 foreach (string participantID in res.Participants)
                 {
@@ -571,9 +585,11 @@ namespace Client
 
             Log.Show(_userName, "Slot " + slotID + " of reservation " + res.ReservationID + " was pre-committed successfully. Assigning calendar slot.");
 
+            Monitor.Enter(_calendar[slotID]);
+
             AssignCalendarSlot(res, slot, false);
 
-            //RELEASE LOCK HERE
+            Monitor.Exit(_calendar[slotID]);
 
             foreach (string participantID in res.Participants)
             {
@@ -628,7 +644,17 @@ namespace Client
 
             //IF NOT LOCKED GET LOCK HERE
 
+            if (!locked)
+            {
+                Monitor.Enter(_calendar[slot.SlotID]);
+            }
+
             FreeCalendarSlot(slot);
+
+            if (!locked)
+            {
+                Monitor.Exit(_calendar[slot.SlotID]);
+            }
 
             //IF NOT LOCKED RELEASE LOCK HERE
         }
@@ -745,11 +771,8 @@ namespace Client
         {
             List<ReservationSlot> reservationSlots = new List<ReservationSlot>();
 
-            //LOCK HERE
-
             foreach (int slot in req.Slots)
             {
-
                 ReservationSlotState state = ReservationSlotState.INITIATED;
 
                 CalendarSlot calendarSlot;
@@ -770,17 +793,17 @@ namespace Client
                     Log.Debug(_userName, "Creating new calendar entry. Slot: " + calendarSlot.SlotNum + ". State: " + calendarSlot.State);
                 }
 
+                Monitor.Enter(calendarSlot);
                 if (calendarSlot.State == CalendarSlotState.FREE)
                 {
                     calendarSlot.State = CalendarSlotState.ACKNOWLEDGED;
                 }
+                Monitor.Exit(calendarSlot);
                 calendarSlot.WaitingBook.Add(resID);
 
                 ReservationSlot rs = new ReservationSlot(resID, slot, state);
                 reservationSlots.Add(rs);
             }
-
-            //RELEASE LOCK HERE
 
             return reservationSlots;
         }
