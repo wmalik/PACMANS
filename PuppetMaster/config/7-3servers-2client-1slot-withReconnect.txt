@@ -9,3 +9,4 @@ connect user2 127.0.0.1:2803
 reservation {R1;user1,user2;8001}
 readCalendar user1 127.0.0.1:2801
 readCalendar user2 127.0.0.1:2803
+shutdown

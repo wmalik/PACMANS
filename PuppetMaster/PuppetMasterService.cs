@@ -21,9 +21,7 @@ namespace PuppetMaster
         Hashtable servers_list = new Hashtable();
         Hashtable clientFacadeList = new Hashtable();
         Hashtable serverFacadeList = new Hashtable();
-        TcpChannel client_channel;
-        TcpChannel server_channel;
-
+        
         public override object InitializeLifetimeService()
         {
             return null;
@@ -68,7 +66,6 @@ namespace PuppetMaster
         public void show(string msg)
         {
             Gui.show(msg);
-            Console.WriteLine("NAVANEETH is GAY!");
         }
 
         private IClientFacade connectToClientFacadeService(ClientMetadata cm)
@@ -80,7 +77,7 @@ namespace PuppetMaster
             IDictionary RemoteChannelProperties = new Dictionary<string, string>();
             RemoteChannelProperties["name"] = cm.Username;
 
-            client_channel = new TcpChannel(RemoteChannelProperties, null, null);
+            TcpChannel client_channel = new TcpChannel(RemoteChannelProperties, null, null);
 
             ChannelServices.RegisterChannel(client_channel, true);
 
@@ -104,7 +101,7 @@ namespace PuppetMaster
             IDictionary RemoteChannelProperties = new Dictionary<string, string>();
             RemoteChannelProperties["name"] = sm.Username;
 
-            server_channel = new TcpChannel(RemoteChannelProperties, null, null);
+            TcpChannel server_channel = new TcpChannel(RemoteChannelProperties, null, null);
 
             ChannelServices.RegisterChannel(server_channel, true);
 
@@ -157,6 +154,20 @@ namespace PuppetMaster
             Gui.updateServersTree(sm, null);
 
             return true;
+        }
+
+        public void cleanUp()
+        {
+            /*
+            getClientFacadeList().Clear();
+            getServerFacadeList().Clear();
+            getServersList().Clear();
+            getClientsList().Clear();
+            */
+            clientFacadeList.Clear();
+            serverFacadeList.Clear();
+            servers_list.Clear();
+            clients_list.Clear();
         }
     }
 }
