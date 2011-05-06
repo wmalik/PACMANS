@@ -68,10 +68,10 @@ namespace PuppetMaster
 
         public void show(object sender)
         {
-            
+
             if (this.InvokeRequired)
             {
-            
+
                 this.BeginInvoke(new Invoker(show), sender);
                 return;
             }
@@ -98,7 +98,10 @@ namespace PuppetMaster
         private void startPuppetMasterService()
         {
             int port = Convert.ToInt32(portnum);
-            TcpChannel channel = new TcpChannel(port);
+            IDictionary RemoteChannelProperties = new Dictionary<string, string>();
+            RemoteChannelProperties["name"] = "PuppetMasterChannel";
+            RemoteChannelProperties["port"] = port.ToString();
+            TcpChannel channel = new TcpChannel(RemoteChannelProperties, null, null);
             ChannelServices.RegisterChannel(channel, true);
 
 
@@ -209,15 +212,18 @@ namespace PuppetMaster
             rr.Users = usersList;
             rr.Slots = slotsList;
             IClientFacade icf = (IClientFacade)pms.getClientFacadeList()[initiator];
-            try {
-            if (icf != null)
-                icf.CreateReservation(rr);  //There is an exception unhandled here.
-            else
-                show("Unable to get Client Facade of Initiator");
-            } catch(Exception ex) {
-                Console.WriteLine("[PMS-EXCEPTION] "+ex.ToString());
+            try
+            {
+                if (icf != null)
+                    icf.CreateReservation(rr);  //There is an exception unhandled here.
+                else
+                    show("Unable to get Client Facade of Initiator");
             }
-            
+            catch (Exception ex)
+            {
+                Console.WriteLine("[PMS-EXCEPTION] " + ex.ToString());
+            }
+
         }
 
         private void disconnectMenuItem_Click(object sender, EventArgs e)
@@ -384,9 +390,16 @@ namespace PuppetMaster
                                 Thread.Sleep(100);
                             }
 
-                            isf.Disconnect();
-                            changeIconToDisconnected(username, null);
-                            show("Server disconnected. TODO: call server facade");
+                            try
+                            {
+                                isf.Disconnect();
+                                changeIconToDisconnected(username, null);
+                                show("Server disconnected. TODO: call server facade");
+                            }
+                            catch (Exception ioe)
+                            {
+                                MessageBox.Show(ioe.ToString());
+                            }
                         }
                         else
                         {
@@ -526,21 +539,34 @@ namespace PuppetMaster
                         break;
 
                     case "shutdown":
-                        show("Shutting down all processes in 3 seconds");
-                        Thread.Sleep(3000);
-                        //cleaning up
-                        pms.getClientFacadeList().Clear();
-                        pms.getServerFacadeList().Clear();
-                        pms.getServersList().Clear();
+                        show("Shutting down all processes in 2 seconds");
+                        Thread.Sleep(2000);
+
 
                         //killing all processes
                         foreach (Process p in processes)
                         {
+                            
+                            string userName = p.StartInfo.Arguments.Split(' ')[0];
                             p.Kill();
-                            removeNodeFromTreeView(p.StartInfo.Arguments.Split(' ')[0], null);
-                            show("Killed " + p.StartInfo.FileName + " " + p.StartInfo.Arguments);
+                            removeNodeFromTreeView(userName, null);
+                            show("Killed " + p.StartInfo.Arguments);
+
                         }
-                        
+
+                        //cleaning up
+                        pms.getClientFacadeList().Clear();
+                        pms.getServerFacadeList().Clear();
+                        pms.getServersList().Clear();
+                        pms.getClientsList().Clear();
+                        processes.Clear();
+
+                        //unregistering channels
+                        UnregisterChannels();
+
+                        show(" ");
+                        show("----------------------SHUTDOWN COMPLETE--------------------");
+                        show(" ");
                         break;
                 }
 
@@ -549,6 +575,23 @@ namespace PuppetMaster
             sr.Close();
         }
 
+        /*required for the shutdown command*/
+        public void UnregisterChannels()
+        {
+            IChannel[] registeredChannels = ChannelServices.RegisteredChannels;
+            string reg_channels = "";
+            for (int i = 0; i < registeredChannels.Length; i++)
+            {
+
+                if (!registeredChannels[i].ChannelName.Equals("PuppetMasterChannel"))
+                {
+                    ChannelServices.UnregisterChannel(registeredChannels[i]);
+                    reg_channels = reg_channels + registeredChannels[i].ChannelName + " ";
+                }
+
+            }
+            show("Unregistered channels: "+reg_channels);
+        }
 
         private void removeNodeFromTreeView(object sender, EventArgs ea)
         {
