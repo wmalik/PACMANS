@@ -5,6 +5,4 @@ connect wasif 127.0.0.1:6677
 connect navaneeth 127.0.0.1:6678
 connect paulo 127.0.0.1:6679
 connect joao_garcia 127.0.0.1:6680
-disconnect paulo 127.0.0.1:6679
-disconnect navaneeth 127.0.0.1:6678
 

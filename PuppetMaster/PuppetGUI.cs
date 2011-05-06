@@ -36,6 +36,7 @@ namespace PuppetMaster
         PuppetMasterService pms;
         OpenFileDialog openFileDialog1;
         List<Process> processes = new List<Process>();
+        ObjRef objRef;
 
         public PuppetGUI()
         {
@@ -107,8 +108,7 @@ namespace PuppetMaster
 
             pms = new PuppetMasterService();
             pms.Gui = this;
-            RemotingServices.Marshal(pms, Common.Constants.PUPPET_MASTER_SERVICE_NAME, typeof(PuppetMasterService));
-
+            objRef = RemotingServices.Marshal(pms, Common.Constants.PUPPET_MASTER_SERVICE_NAME, typeof(PuppetMasterService));
 
             /*
              RemotingConfiguration.RegisterWellKnownServiceType(
@@ -346,6 +346,7 @@ namespace PuppetMaster
         private void loadEventsButton_Click(object sender, EventArgs e)
         {
 
+            //startPuppetMasterService();
 
             openFileDialog1 = new OpenFileDialog();
             openFileDialog1.Filter = "txt files (*.txt)|*.txt";
@@ -394,7 +395,6 @@ namespace PuppetMaster
                             {
                                 isf.Disconnect();
                                 changeIconToDisconnected(username, null);
-                                show("Server disconnected. TODO: call server facade");
                             }
                             catch (Exception ioe)
                             {
@@ -410,7 +410,14 @@ namespace PuppetMaster
                                 icf = (IClientFacade)pms.getClientFacadeList()[username];
                                 Thread.Sleep(1000);
                             }
-                            icf.Disconnect();
+
+                            try
+                            {
+                                icf.Disconnect();
+                            }
+                            catch (Exception ee) {
+                                show("Exception: "+ee.Message);
+                            }
 
                             changeIconToDisconnected(username, null);
                         }
@@ -450,6 +457,7 @@ namespace PuppetMaster
 
                                 startInfo.FileName = path + "Server.exe";
                                 startInfo.Arguments = username + " " + port;
+                                startInfo.WindowStyle = ProcessWindowStyle.Minimized;
                                 Process process = new Process();
                                 process.StartInfo = startInfo;
                                 process.Start();
@@ -474,6 +482,7 @@ namespace PuppetMaster
 
                                 startInfo.FileName = path + "Client.exe";
                                 startInfo.Arguments = username + " " + port;
+                                startInfo.WindowStyle = ProcessWindowStyle.Minimized;
                                 Process process = new Process();
                                 process.StartInfo = startInfo;
                                 process.Start();
@@ -496,8 +505,14 @@ namespace PuppetMaster
                     case "readCalendar":
                         username = line.Split(' ')[1].Trim();
                         icf = (IClientFacade)pms.getClientFacadeList()[username];
-                        clientCalendar = icf.ReadCalendar();
-                        show("Calendar for " + username + ": " + string.Join(",", clientCalendar));
+                        try
+                        {
+                            clientCalendar = icf.ReadCalendar();
+                            show("Calendar for " + username + ": " + string.Join(",", clientCalendar));
+                        }
+                        catch (Exception ee) {
+                            show("Exception: "+ee.Message);
+                        }
                         break;
 
                     case "reservation":
@@ -543,22 +558,54 @@ namespace PuppetMaster
                         Thread.Sleep(2000);
 
 
-                        //killing all processes
+                        //killing all clients
+                        foreach (Process pp in processes)
+                        {
+                            string userName = pp.StartInfo.Arguments.Split(' ')[0].Trim();
+
+                            if (!userName.StartsWith("central"))
+                            {
+                                ((IClientFacade)pms.getClientFacadeList()[userName]).Disconnect();
+                                pp.Kill();
+                                removeNodeFromTreeView(userName, null);
+                                show("Killed " + pp.StartInfo.Arguments);
+                            }
+
+
+
+
+                        }
+
+                        //killing all servers
                         foreach (Process p in processes)
                         {
-                            
-                            string userName = p.StartInfo.Arguments.Split(' ')[0];
-                            p.Kill();
-                            removeNodeFromTreeView(userName, null);
-                            show("Killed " + p.StartInfo.Arguments);
+
+                            string userName = p.StartInfo.Arguments.Split(' ')[0].Trim();
+
+                            if (userName.StartsWith("central"))
+                            {
+
+                                try
+                                {
+                                    ((IServerFacade)pms.getServerFacadeList()[userName]).Disconnect();
+                                } catch(Exception ee) {
+                                    show(ee.Message);
+                                }
+                                p.Kill();
+                                removeNodeFromTreeView(userName, null);
+                                show("Killed " + p.StartInfo.Arguments);
+
+                            }
 
                         }
 
                         //cleaning up
-                        pms.getClientFacadeList().Clear();
-                        pms.getServerFacadeList().Clear();
-                        pms.getServersList().Clear();
-                        pms.getClientsList().Clear();
+                        pms.cleanUp();
+
+                        //RemotingServices.Unmarshal(objRef);
+                        //objRef = null;
+                        //pms = null;
+
                         processes.Clear();
 
                         //unregistering channels
@@ -590,7 +637,7 @@ namespace PuppetMaster
                 }
 
             }
-            show("Unregistered channels: "+reg_channels);
+            show("Unregistered channels: " + reg_channels);
         }
 
         private void removeNodeFromTreeView(object sender, EventArgs ea)
