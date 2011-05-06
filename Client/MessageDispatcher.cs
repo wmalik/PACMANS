@@ -40,12 +40,14 @@ namespace Client
         private string _userName;
         private Dictionary<string, IBookingService> _clients;
         private Dictionary<string, List<Tuple<MessageType, int, object[]>>> _msgQueue;
+        private Dictionary<string, IAsyncResult> _previousCall;
 
         public MessageDispatcher(string userName)
         {
             _userName = userName;
             _clients = new Dictionary<string, IBookingService>();
             _msgQueue = new Dictionary<string, List<Tuple<MessageType, int, object[]>>>();
+            _previousCall = new Dictionary<string, IAsyncResult>();
         }
 
         public void SendMessage(MessageType type, int resID, string userID, params object[] msgParams)
@@ -61,7 +63,17 @@ namespace Client
             {
                 try
                 {
-                    IAsyncResult result;
+                    IAsyncResult result = null;
+
+                    //Apparently there is a problem of sending two async messages very close
+                    //to each other
+                    //Wait until previous call was completed before sending next message
+                    if (_previousCall.TryGetValue(userID, out result) && !result.IsCompleted)
+                    {
+                        Log.Debug(_userName, "Previous call was not completed, waiting 10ms before sending next message.");
+                        result.AsyncWaitHandle.WaitOne(10);
+                    }
+
                     switch (type)
                     {
                         case MessageType.INIT_RESERVATION:
@@ -85,6 +97,7 @@ namespace Client
                             break;
                     }
                     Log.Debug(_userName, "Sucessfully sent " + type + " message to participant " + userID + " of reservation " + resID);
+                    _previousCall[userID] = result;
                 }
                 catch (Exception)
                 {
@@ -122,6 +135,7 @@ namespace Client
             Log.Debug(_userName, "Client disconnected: " + userID);
             //Get lock
             _clients.Remove(userID);
+            _previousCall.Remove(userID);
             //Get lock
         }
 
@@ -174,6 +188,7 @@ namespace Client
             //Get lock
             _clients.Remove(userID);
             _msgQueue.Remove(userID);
+            _previousCall.Remove(userID);
             //Release lock
         }
     }

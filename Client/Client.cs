@@ -196,6 +196,8 @@ namespace Client
 
                 Log.Show(_username, "Attempting to Register user on central server\n");
 
+                _slotManager.Connect();
+
                 while (true)
                 {
                     try
@@ -209,8 +211,6 @@ namespace Client
                         Log.Debug(_username, "\nEXCEPTION: " + e.Message);
                     }
                 }
-                
-                _slotManager.Connect();
                 
                 return true;
             }

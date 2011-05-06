@@ -506,7 +506,15 @@ namespace PuppetMaster
                             icf = (IClientFacade)pms.getClientFacadeList()[initiator];
                             Thread.Sleep(100);
                         }
-                        icf.CreateReservation(rr); //WASIF - handle exception here. (Navaneeth - You have handled it already)
+
+                        try
+                        {
+                            icf.CreateReservation(rr);
+                        }
+                        catch (Exception e)
+                        {
+                            show("Error on create reservation: " + e.Message);
+                        }
 
                         Thread.Sleep(1000);
                         break;

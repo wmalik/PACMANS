@@ -239,7 +239,8 @@ namespace Client
             //Check if all participants replied before moving to next phase
             if (CollectReply(resID, slotID, userID, ack, out res) && res.Replied.Count == (res.Participants.Count - 1))
             {
-                Log.Show(_userName, "All participants committed slot " + slotID + " of reservation " + res.ReservationID + ". Cleaning up reservation");
+                //TODO: Log to puppet master
+                Log.Show(_userName, "Reservation " + res.ReservationID + " succesfully assigned to slot " + slotID + " on clients: " + string.Join(",", res.Participants) + ". Cleaning up reservation.");
 
                 CleanReservation(res);
                 _clientMonitor.RemoveReservation(resID);
@@ -323,7 +324,7 @@ namespace Client
             //GET LOCK HERE
 
             CalendarSlot calendarSlot = _calendar[slotID];
-            calendarSlot.WaitingBook.Remove(slotID);
+            calendarSlot.WaitingBook.Remove(resID);
 
             //if slot is already booked and resID is bigger than ID holding lock, add this request to queue
             if (calendarSlot.State == CalendarSlotState.BOOKED && resID > calendarSlot.ReservationID)
@@ -333,6 +334,7 @@ namespace Client
                 return;
             }
 
+            //bool ack = !calendarSlot.Locked && (calendarSlot.State == CalendarSlotState.ACKNOWLEDGED || (calendarSlot.State == CalendarSlotState.BOOKED && resID < calendarSlot.ReservationID));
             bool ack = !calendarSlot.Locked && calendarSlot.State != CalendarSlotState.ASSIGNED;
 
             if (ack)
@@ -533,10 +535,14 @@ namespace Client
             //GET LOCK HERE
 
             CalendarSlot calendarSlot = _calendar[slotID];
+            ReservationSlot slot = GetSlot(res, slotID);
 
             if (calendarSlot.Locked || calendarSlot.State == CalendarSlotState.ASSIGNED || calendarSlot.ReservationID != res.ReservationID)
             {
                 Log.Show(_userName, "Booking of slot " + slotID + " of reservation " + res.ReservationID + " failed. Trying to book next slot.");
+
+                AbortReservationSlot(slot, true);
+
                 //RELEASE LOCK HERE
 
                 BookNextSlot(res);
@@ -545,7 +551,6 @@ namespace Client
             {
                 Log.Show(_userName, "Slot " + slotID + " of reservation " + res.ReservationID + " was booked successfully. Starting commit process.");
 
-                ReservationSlot slot = GetSlot(res, slotID);
                 LockCalendarSlot(res, slot);
 
                 //RELEASE LOCK HERE
@@ -577,9 +582,6 @@ namespace Client
                     _msgDispatcher.SendMessage(MessageType.DO_COMMIT, res.ReservationID, participantID, slot.SlotID);
                 }
             }
-
-            //TODO: Log to puppet master
-            Log.Show(_userName, "Reservation " + res.ReservationID + " succesfully assigned to slot " + slotID + " on clients: " + string.Join(",", res.Participants));
         }
 
         private bool CollectReply(int resID, int slotID, string userID, bool ack, out Reservation res)
@@ -676,7 +678,7 @@ namespace Client
         private void BookCalendarSlot(Reservation res, ReservationSlot resSlot)
         {
             CalendarSlot calendarSlot = _calendar[resSlot.SlotID];
-            calendarSlot.WaitingBook.Remove(resSlot.SlotID);
+            calendarSlot.WaitingBook.Remove(resSlot.ReservationID);
             res.CurrentSlot = resSlot.SlotID;
             calendarSlot.State = CalendarSlotState.BOOKED;
             calendarSlot.ReservationID = resSlot.ReservationID;
@@ -705,7 +707,7 @@ namespace Client
             calendarSlot.State = CalendarSlotState.ASSIGNED;
             calendarSlot.ReservationID = res.ReservationID;
 
-            ////SEND ASYNCHRONOUS NACK TO ALL PENDING RESERVATIONS ON THE QUEUE
+            //SEND ASYNCHRONOUS NACK TO ALL PENDING RESERVATIONS ON THE QUEUE
             foreach (int resID in new List<int>(calendarSlot.BookQueue))
             {
                 Reservation otherRes;
@@ -762,12 +764,17 @@ namespace Client
                 {
                     calendarSlot = new CalendarSlot();
                     calendarSlot.SlotNum = slot;
-                    calendarSlot.State = CalendarSlotState.ACKNOWLEDGED;
-                    calendarSlot.WaitingBook.Add(resID);
+                    calendarSlot.State = CalendarSlotState.FREE;
 
                     _calendar[slot] = calendarSlot;
                     Log.Debug(_userName, "Creating new calendar entry. Slot: " + calendarSlot.SlotNum + ". State: " + calendarSlot.State);
                 }
+
+                if (calendarSlot.State == CalendarSlotState.FREE)
+                {
+                    calendarSlot.State = CalendarSlotState.ACKNOWLEDGED;
+                }
+                calendarSlot.WaitingBook.Add(resID);
 
                 ReservationSlot rs = new ReservationSlot(resID, slot, state);
                 reservationSlots.Add(rs);
