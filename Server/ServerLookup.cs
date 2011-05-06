@@ -21,7 +21,7 @@ namespace Server
 
     class callback
     {
-        public static int WAIT_TIME = 10;
+        public static int WAIT_TIME = 50;
 
         public delegate bool RemoteAsyncDelegate();
         public delegate ClientMetadata RemoteLookupDelegate();

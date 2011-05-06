@@ -1,0 +1,36 @@
+connect central-1 127.0.0.1:1000
+connect central-2 127.0.0.1:1001
+connect central-3 127.0.0.1:1002
+connect user1 127.0.0.1:2121
+connect user2 127.0.0.1:2122
+connect user3 127.0.0.1:2123
+connect user4 127.0.0.1:2124
+connect user5 127.0.0.1:2125
+connect user6 127.0.0.1:2126
+connect user7 127.0.0.1:2127
+connect user8 127.0.0.1:2128
+connect user9 127.0.0.1:2129
+reservation {R1; user1, user2, user3, user4, user5, user6, user7, user8, user9, user10; 1}
+reservation {R2; user2, user1, user3, user4, user5, user6, user7, user8, user9, user10; 1, 2}
+reservation {R3; user3, user2, user1, user4, user5, user6, user7, user8, user9, user10; 1, 3}
+reservation {R4; user4, user2, user3, user1, user5, user6, user7, user8, user9, user10; 1, 4}
+reservation {R5; user5, user2, user3, user4, user1, user6, user7, user8, user9, user10; 1, 5}
+reservation {R6; user6, user2, user3, user4, user5, user1, user7, user8, user9, user10; 1, 6}
+reservation {R7; user7, user2, user3, user4, user5, user6, user1, user8, user9, user10; 1, 7}
+reservation {R8; user8, user2, user3, user4, user5, user6, user7, user1, user9, user10; 1, 8}
+reservation {R9; user9, user2, user3, user4, user5, user6, user7, user8, user1, user10; 1, 9}
+wait 3
+connect user10 127.0.0.1:2130
+reservation {R10; user10, user2, user3, user4, user5, user6, user7, user8, user9, user1; 1, 10}
+wait 5
+readCalendar user1 127.0.0.1:2121
+readCalendar user2 127.0.0.1:2122
+readCalendar user3 127.0.0.1:2123
+readCalendar user4 127.0.0.1:2124
+readCalendar user5 127.0.0.1:2125
+readCalendar user6 127.0.0.1:2126
+readCalendar user7 127.0.0.1:2127
+readCalendar user8 127.0.0.1:2128
+readCalendar user9 127.0.0.1:2129
+readCalendar user10 127.0.0.1:2130
+shutdown

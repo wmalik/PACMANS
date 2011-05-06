@@ -10,19 +10,29 @@ namespace Common.Slots
     {
         [NonSerialized]
         private bool m_locked;
-        //[NonSerialized]
-        //private List<int> m_queue;
         [NonSerialized]
         private List<int> m_waitingBook;
 
         public CalendarSlot()
         {
             WaitingBook = new List<int>();
-            //BookQueue = new List<int>();
+            Participants = new List<string>();
             Locked = false;
         }
 
         public int SlotNum
+        {
+            get;
+            set;
+        }
+
+        public string Description
+        {
+            get;
+            set;
+        }
+
+        public List<string> Participants
         {
             get;
             set;
@@ -46,12 +56,6 @@ namespace Common.Slots
             set { this.m_locked = value; }
         }
 
-        //public List<int> BookQueue
-        //{
-        //    get { return this.m_queue; }
-        //    set { this.m_queue = value; }
-        //}
-
         public List<int> WaitingBook
         {
             get { return this.m_waitingBook; }
@@ -60,7 +64,11 @@ namespace Common.Slots
 
         public override string ToString()
         {
-            return "[" + SlotNum + "|" + State  + (State == CalendarSlotState.ASSIGNED? "|res=" + ReservationID.ToString() : "") +"]";
+            return "[" + SlotNum + 
+                "|" + State +
+                (State == CalendarSlotState.ACKNOWLEDGED ? "|" + String.Join(",",WaitingBook) : "") +
+                (State == CalendarSlotState.ASSIGNED || State == CalendarSlotState.BOOKED ? "|res=" + ReservationID.ToString() : "") + 
+                (State == CalendarSlotState.ASSIGNED ? "|" +  Description + "|" + String.Join(",", Participants) : "") + "]";
         }
 
     }

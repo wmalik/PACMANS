@@ -77,7 +77,7 @@ namespace PuppetMaster
                 return;
             }
 
-            string msg = (string)sender;
+            string msg = sender.ToString();
             this.consoleBox.AppendText("\r\n" + "(*) " + msg);
         }
 
@@ -286,8 +286,11 @@ namespace PuppetMaster
                 IClientFacade fs = (IClientFacade)pms.getClientFacadeList()[username];
                 List<CalendarSlot> calendar = fs.ReadCalendar();
 
-                show("Calendar for " + username + ": " + string.Join(",", calendar));
-
+                show("Calendar for " + username + ":");
+                foreach (CalendarSlot slot in calendar)
+                {
+                    show(slot);
+                }
             }
             else
             {
@@ -415,8 +418,9 @@ namespace PuppetMaster
                             {
                                 icf.Disconnect();
                             }
-                            catch (Exception ee) {
-                                show("Exception: "+ee.Message);
+                            catch (Exception ee)
+                            {
+                                show("Exception: " + ee.Message);
                             }
 
                             changeIconToDisconnected(username, null);
@@ -508,10 +512,15 @@ namespace PuppetMaster
                         try
                         {
                             clientCalendar = icf.ReadCalendar();
-                            show("Calendar for " + username + ": " + string.Join(",", clientCalendar));
+                            show("Calendar for " + username + ":");
+                            foreach (CalendarSlot slot in clientCalendar)
+                            {
+                                show(slot);
+                            }
                         }
-                        catch (Exception ee) {
-                            show("Exception: "+ee.Message);
+                        catch (Exception ee)
+                        {
+                            show("Exception: " + ee.Message);
                         }
                         break;
 
@@ -588,7 +597,9 @@ namespace PuppetMaster
                                 try
                                 {
                                     ((IServerFacade)pms.getServerFacadeList()[userName]).Disconnect();
-                                } catch(Exception ee) {
+                                }
+                                catch (Exception ee)
+                                {
                                     show(ee.Message);
                                 }
                                 p.Kill();
