@@ -10,7 +10,6 @@ namespace Common.Slots
     {
         [NonSerialized]
         private bool m_locked;
-        [NonSerialized]
         private List<int> m_waitingBook;
 
         public CalendarSlot()
