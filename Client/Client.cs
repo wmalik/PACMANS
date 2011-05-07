@@ -65,7 +65,9 @@ namespace Client
             _configFile = _path + configFile;
             ReadConfigurationFile();
             _isOnline = false;
+            //initPMSObject();
             _slotManager = new SlotManager(_username, _port, _servers);
+            //_slotManager.setPMSObject(pms);
             string logpath = new Uri(_path + "log\\log_client_" + _username + ".txt").LocalPath;
             _logfile = new StreamWriter(logpath, true);
             _logfile.WriteLine("-");
@@ -113,7 +115,9 @@ namespace Client
 
             Connect();
 
-            initPMSObject();
+            //////////////////TODO: figure out where its hanging and try restoring to see if it works!!!!!!
+            initPMSObject(); //moved to the constructor
+            _slotManager.setPMSObject(pms);
             NotifyPuppetMaster();
 
             System.Console.ReadLine();
@@ -263,8 +267,6 @@ namespace Client
 
         bool IClientFacade.CreateReservation(ReservationRequest reservation)
         {
-
-
             return _slotManager.StartReservation(reservation);
         }
 

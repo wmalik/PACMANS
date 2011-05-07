@@ -10,6 +10,7 @@ using Common.Util;
 using System.Net.Sockets;
 using System.Threading;
 using System.Runtime.Remoting;
+using PuppetMaster;
 
 namespace Client
 {
@@ -52,6 +53,7 @@ namespace Client
         private Thread _monitorThread;
 
         private DisconnectedEventHandler _disconnectInterested;
+        private PuppetMasterService _pms;
 
         public override object InitializeLifetimeService()
         {
@@ -70,6 +72,12 @@ namespace Client
             _clientMonitor = new ClientMonitor(_msgDispatcher, _userName, _servers);
             _disconnectInterested = new DisconnectedEventHandler(_msgDispatcher.ClientDisconnected) + new DisconnectedEventHandler(_clientMonitor.Disconnected);
             _monitorThread = null;
+        }
+
+        public void setPMSObject(PuppetMasterService pms)
+        {
+            _pms = pms;
+            _msgDispatcher.setPMSObject(_pms);
         }
 
         /*
@@ -176,6 +184,16 @@ namespace Client
                     res.InitiatorStub.Disconnected(res.ReservationID, _userName);
                 }
             }
+
+            _pms.show("-------STATISTICS for "+_userName+"---------");
+            _pms.show(
+                     " [MessageCount:"+_msgDispatcher.getMessageCount()+"]"+
+                     " [InitResCount:"+_msgDispatcher.getInitResCount()+"]"+
+                     " [BookSlotCount:"+_msgDispatcher.getBookSlotCount()+"]"+
+                     " [PreCommitCount:"+_msgDispatcher.getPreCommitCount()+"]"+
+                     " [DoCommitCount:"+_msgDispatcher.getDoCommitCount()+"]"
+                     );
+            _pms.show(" ");
         }
 
         /*

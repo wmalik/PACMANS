@@ -579,16 +579,11 @@ namespace PuppetMaster
                                 removeNodeFromTreeView(userName, null);
                                 show("Killed " + pp.StartInfo.Arguments);
                             }
-
-
-
-
                         }
 
                         //killing all servers
                         foreach (Process p in processes)
                         {
-
                             string userName = p.StartInfo.Arguments.Split(' ')[0].Trim();
 
                             if (userName.StartsWith("central"))

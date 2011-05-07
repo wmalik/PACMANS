@@ -7,6 +7,7 @@ using Common.Util;
 using Common.Beans;
 using System.Net;
 using System.Runtime.Remoting;
+using PuppetMaster;
 
 namespace Client
 {
@@ -22,6 +23,17 @@ namespace Client
         void ClearMessages(List<string> participants, int resID);
 
         void ClearStub(string userID);
+
+        void setPMSObject(PuppetMasterService pms);
+
+        //Statistics
+        int getMessageCount();
+        int getInitResCount();
+        int getBookSlotCount();
+        int getPreCommitCount();
+        int getDoCommitCount();
+        
+
     }
 
     delegate void InitReservationDelegate(ReservationRequest req, int resID, string initiatorID, string initiatorIP, int initiatorPort);
@@ -41,6 +53,15 @@ namespace Client
         private Dictionary<string, IBookingService> _clients;
         private Dictionary<string, List<Tuple<MessageType, int, object[]>>> _msgQueue;
         private Dictionary<string, IAsyncResult> _previousCall;
+        private int _messageCount = 0;
+        private int _initResCount = 0;
+        private int _bookSlotCount = 0;
+        private int _preCommitCount = 0;
+        private int _doCommitCount = 0;
+        private PuppetMasterService _pms;
+
+
+        
 
         public MessageDispatcher(string userName)
         {
@@ -50,6 +71,38 @@ namespace Client
             _previousCall = new Dictionary<string, IAsyncResult>();
         }
 
+        public void setPMSObject(PuppetMasterService pms)
+        {
+            _pms = pms;
+        }
+
+        /*     STATISTICS FUNCTIONS    */
+        public int getMessageCount()
+        {
+            return _messageCount;
+        }
+
+        public int getInitResCount()
+        {
+            return _initResCount;
+        }
+
+        public int getBookSlotCount()
+        {
+            return _bookSlotCount;
+        }
+
+        public int getPreCommitCount()
+        {
+            return _preCommitCount;
+        }
+
+        public int getDoCommitCount()
+        {
+            return _doCommitCount;
+        }
+
+        /*  STATISTICS FUNCTIONS END HERE   */
         public void SendMessage(MessageType type, int resID, string userID, params object[] msgParams)
         {
             SendMessage(true, type, resID, userID, msgParams);
@@ -79,23 +132,32 @@ namespace Client
                         case MessageType.INIT_RESERVATION:
                             InitReservationDelegate initRes = new InitReservationDelegate(stub.InitReservation);
                             result = initRes.BeginInvoke((ReservationRequest)msgParams[0], resID, (string)msgParams[1], (string)msgParams[2], (int)msgParams[3], null, null);
+                            _initResCount++;
                             break;
 
                         case MessageType.BOOK_SLOT:
                             ParticipantDelegate bookSlot = new ParticipantDelegate(stub.BookSlot);
                             result = bookSlot.BeginInvoke(resID, (int)msgParams[0], null, null);
+                            _bookSlotCount++;
                             break;
 
                         case MessageType.PRE_COMMIT:
                             ParticipantDelegate preCommit = new ParticipantDelegate(stub.PrepareCommit);
                             result = preCommit.BeginInvoke(resID, (int)msgParams[0], null, null);
+                            _preCommitCount++;
                             break;
 
                         case MessageType.DO_COMMIT:
                             ParticipantDelegate doCommit = new ParticipantDelegate(stub.DoCommit);
                             result = doCommit.BeginInvoke(resID, (int)msgParams[0], null, null);
+                            _doCommitCount++;
                             break;
                     }
+
+                    //total counter for reservation messages between clients
+                    _messageCount++;
+                    
+
                     Log.Debug(_userName, "Sucessfully sent " + type + " message to participant " + userID + " of reservation " + resID);
                     _previousCall[userID] = result;
                 }
